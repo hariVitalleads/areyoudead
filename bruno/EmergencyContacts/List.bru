@@ -1,0 +1,15 @@
+meta {
+  name: List Contacts
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:8080/api/emergency-contacts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

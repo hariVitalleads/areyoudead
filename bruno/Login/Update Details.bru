@@ -1,0 +1,26 @@
+meta {
+  name: Update Details
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:8080/api/login/details
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "email": "updated@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "country": "USA",
+    "mobileNumber": "1234567890",
+    "addressLine1": "123 Main St"
+  }
+}

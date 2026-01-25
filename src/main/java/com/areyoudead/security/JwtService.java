@@ -1,7 +1,7 @@
 package com.areyoudead.security;
 
 import com.areyoudead.config.JwtProperties;
-import com.areyoudead.user.User;
+import com.areyoudead.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;

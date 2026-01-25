@@ -10,6 +10,14 @@ services:
     volumes:
       - areyoudead_pgdata:/var/lib/postgresql/data
 
+  flyway:
+    image: flyway/flyway
+    command: -url=jdbc:postgresql://postgres:5432/areyoudead -user=areyoudead -password=areyoudead -connectRetries=60 migrate
+    volumes:
+      - ./src/main/resources/db/migration:/flyway/sql
+    depends_on:
+      - postgres
+
 volumes:
   areyoudead_pgdata:
 

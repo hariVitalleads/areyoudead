@@ -1,0 +1,22 @@
+meta {
+  name: Add Contact
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/emergency-contacts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "mobileNumber": "1234567890",
+    "email": "contact@example.com"
+  }
+}

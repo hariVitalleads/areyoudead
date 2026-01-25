@@ -1,0 +1,22 @@
+meta {
+  name: Update Contact
+  type: http
+  seq: 3
+}
+
+put {
+  url: http://localhost:8080/api/emergency-contacts/{{contactId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "mobileNumber": "0987654321",
+    "email": "updated_contact@example.com"
+  }
+}

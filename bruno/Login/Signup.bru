@@ -1,0 +1,41 @@
+meta {
+  name: Signup
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/login/signup
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "password",
+    "firstName": "{{firstName}}",
+    "middleName": "{{middleName}}",
+    "lastName": "{{lastName}}",
+    "country": "{{country}}",
+    "state": "{{state}}",
+    "mobileNumber": "{{mobileNumber}}",
+    "addressLine1": "{{addressLine1}}",
+    "addressLine2": "{{addressLine2}}"
+  }
+}
+
+script:pre-request {
+  const randomString = Math.random().toString(36).substring(7);
+  const randomNumber = Math.floor(100000000 + Math.random() * 900000000);
+  
+  bru.setVar("email", `user_${randomString}@example.com`);
+  bru.setVar("firstName", `First_${randomString}`);
+  bru.setVar("middleName", `Middle_${randomString}`);
+  bru.setVar("lastName", `Last_${randomString}`);
+  bru.setVar("country", "USA");
+  bru.setVar("state", "CA");
+  bru.setVar("mobileNumber", `1${randomNumber}`);
+  bru.setVar("addressLine1", `${randomNumber} Random St`);
+  bru.setVar("addressLine2", `Apt ${randomString}`);
+}

@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+app:
+  scheduler:
+    inactive-days: 1
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/areyoudead}
@@ -15,6 +19,12 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 security:
   jwt:

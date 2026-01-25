@@ -1,0 +1,8 @@
+{
+    "version": "1",
+    "name": "AreYouDead API",
+    "type": "collection",
+    "ignore": [
+        ".git"
+    ]
+}
