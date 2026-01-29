@@ -2,6 +2,7 @@ package com.areyoudead.scheduler;
 
 import com.areyoudead.model.User;
 import com.areyoudead.repository.UserRepository;
+import com.areyoudead.service.EmergencyContactService;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -16,12 +17,15 @@ public class InactiveUserScheduler {
     private static final Logger log = LoggerFactory.getLogger(InactiveUserScheduler.class);
 
     private final UserRepository userRepository;
+    private final EmergencyContactService emergencyContactService;
     private final int inactiveDays;
 
     public InactiveUserScheduler(
             UserRepository userRepository,
+            EmergencyContactService emergencyContactService,
             @Value("${app.scheduler.inactive-days:3}") int inactiveDays) {
         this.userRepository = userRepository;
+        this.emergencyContactService = emergencyContactService;
         this.inactiveDays = inactiveDays;
     }
 
@@ -41,7 +45,11 @@ public class InactiveUserScheduler {
         for (User user : inactiveUsers) {
             log.info("Inactive User Detected: ID={}, Email={}, LastLogin={}",
                     user.getId(), user.getEmail(), user.getLastLoginDate());
-            // Future: Send email or notification here
+            
+            String message = String.format(
+                    "Alert: User %s (%s) has been inactive for %d days. Last login: %s",
+                    user.getEmail(), user.getId(), inactiveDays, user.getLastLoginDate());
+            emergencyContactService.sendSmsToAllContacts(user.getId(), message);
         }
     }
 }

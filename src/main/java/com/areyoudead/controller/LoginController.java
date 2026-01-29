@@ -36,9 +36,9 @@ public class LoginController {
 		this.loginService = loginService;
 	}
 
-	@PostMapping("/signup")
+	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
-	public UserResponse signup(@Valid @RequestBody RegisterRequest req) {
+	public UserResponse register(@Valid @RequestBody RegisterRequest req) {
 		return authService.register(req);
 	}
 

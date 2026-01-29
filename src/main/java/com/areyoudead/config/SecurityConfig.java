@@ -33,6 +33,7 @@ public class SecurityConfig {
 								"/api/login/login",
 								"/api/login/forgot-password",
 								"/api/login/reset-password",
+								"/api/user/register",
 								"/api/user/signup",
 								"/api/user/forgot-password",
 								"/api/user/reset-password")

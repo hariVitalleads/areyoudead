@@ -4,6 +4,9 @@ server:
 app:
   scheduler:
     inactive-days: 1
+  emergency-contacts:
+    sms:
+      enabled: ${EMERGENCY_CONTACTS_SMS_ENABLED:true}
 
 spring:
   datasource:
