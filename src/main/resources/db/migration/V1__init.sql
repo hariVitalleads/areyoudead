@@ -1,4 +1,6 @@
 -- Flyway migration: initial schema for JWT-authenticated users
+-- All TIMESTAMPTZ columns store values in UTC. Application uses hibernate.jdbc.time_zone=UTC
+-- and datasource options=-c TimeZone=UTC for consistent UTC handling.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 

@@ -3,14 +3,24 @@ server:
 
 app:
   scheduler:
-    inactive-days: 1
+    inactive-ms: ${APP_SCHEDULER_INACTIVE_MS:86400000}
+    emergency-contacts:
+      sms:
+        enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_SMS_ENABLED:true}
+      email:
+        enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
   emergency-contacts:
     sms:
       enabled: ${EMERGENCY_CONTACTS_SMS_ENABLED:true}
+    email:
+      enabled: ${EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
+      from-address: ${EMERGENCY_CONTACTS_EMAIL_FROM:noreply@areyoudead.com}
+      subject-prefix: ${EMERGENCY_CONTACTS_EMAIL_SUBJECT_PREFIX:[AreYouAlive]}
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/areyoudead}
+    # options forces Postgres session to UTC; all TIMESTAMPTZ stored/read in UTC
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/areyoudead?options=-c%20TimeZone%3DUTC}
     username: ${SPRING_DATASOURCE_USERNAME:areyoudead}
     password: ${SPRING_DATASOURCE_PASSWORD:areyoudead}
   jpa:
@@ -22,6 +32,29 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+  # SMTP: defaults match MailHog (localhost:1025). For production, set:
+  # MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_SMTP_AUTH=true, MAIL_SMTP_STARTTLS=true
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+
+logging:
+  level:
+    # Set to DEBUG to see generated email HTML in logs
+    com.areyoudead.service.InactiveUserEmailTemplate: ${LOG_LEVEL_EMAIL_TEMPLATE:DEBUG}
+    com.areyoudead.service.EmergencyContactService: ${LOG_LEVEL_EMERGENCY_CONTACT:DEBUG}
 
 management:
   endpoints:
@@ -36,4 +69,3 @@ security:
     secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-123456}
     issuer: ${JWT_ISSUER:areyoudead}
     access-token-ttl-seconds: ${JWT_TTL_SECONDS:3600}
-

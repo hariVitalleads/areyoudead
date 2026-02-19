@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,17 +48,17 @@ class AppUserControllerTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @MockBean
+        @MockitoBean
         private AuthService authService;
 
-        @MockBean
+        @MockitoBean
         private LoginService loginService;
 
-        @MockBean
+        @MockitoBean
         private AppUserService appUserService;
 
         /** Required by JwtAuthenticationFilter when security auto-config is loaded. */
-        @MockBean
+        @MockitoBean
         private JwtService jwtService;
 
         @Autowired

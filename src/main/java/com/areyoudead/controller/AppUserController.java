@@ -9,6 +9,7 @@ import com.areyoudead.dto.MessageResponse;
 import com.areyoudead.dto.RegisterRequest;
 import com.areyoudead.dto.ResetPasswordRequest;
 import com.areyoudead.dto.UpdateAppUserRequest;
+import com.areyoudead.security.CurrentUser;
 import com.areyoudead.security.UserPrincipal;
 import com.areyoudead.service.AppUserService;
 import com.areyoudead.service.AuthService;
@@ -16,7 +17,6 @@ import com.areyoudead.service.LoginService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -58,16 +58,14 @@ public class AppUserController {
 	}
 
 	@GetMapping("/me")
-	public AppUserDetailsResponse me(Authentication authentication) {
-		UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+	public AppUserDetailsResponse me(@CurrentUser UserPrincipal principal) {
 		return appUserService.me(principal.getUserId());
 	}
 
 	@PutMapping("/details")
 	public AppUserDetailsResponse updateDetails(
-			Authentication authentication,
+			@CurrentUser UserPrincipal principal,
 			@Valid @RequestBody UpdateAppUserRequest req) {
-		UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 		return appUserService.update(principal.getUserId(), req.getEmail());
 	}
 }

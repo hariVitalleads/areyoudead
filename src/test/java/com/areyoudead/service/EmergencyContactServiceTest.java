@@ -1,5 +1,6 @@
 package com.areyoudead.service;
 
+import com.areyoudead.config.EmailProperties;
 import com.areyoudead.config.EmergencyContactProperties;
 import com.areyoudead.dto.EmergencyContactRequest;
 import com.areyoudead.dto.EmergencyContactResponse;
@@ -14,10 +15,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +42,15 @@ class EmergencyContactServiceTest {
 
     @Mock
     private EmergencyContactProperties smsProperties;
+
+    @Mock
+    private EmailProperties emailProperties;
+
+    @Mock
+    private JavaMailSender mailSender;
+
+    @Mock
+    private InactiveUserEmailTemplate inactiveUserEmailTemplate;
 
     @InjectMocks
     private EmergencyContactService emergencyContactService;
@@ -128,8 +142,7 @@ class EmergencyContactServiceTest {
         List<EmergencyContact> existing = List.of(
                 createContact((short) 0),
                 createContact((short) 1),
-                createContact((short) 2)
-        );
+                createContact((short) 2));
         when(registrationRepository.existsById(userId)).thenReturn(true);
         when(emergencyContactRepository.findByUserIdOrderByContactIndexAsc(userId)).thenReturn(existing);
 
@@ -143,8 +156,8 @@ class EmergencyContactServiceTest {
 
     @Test
     void addContact_SetsCorrectIndex() {
-        // Given
-        List<EmergencyContact> existing = List.of(createContact((short) 0));
+        // Given: one existing contact with index 1, next should be 2
+        List<EmergencyContact> existing = List.of(createContact((short) 1));
         when(registrationRepository.existsById(userId)).thenReturn(true);
         when(emergencyContactRepository.findByUserIdOrderByContactIndexAsc(userId)).thenReturn(existing);
         when(emergencyContactRepository.save(any(EmergencyContact.class))).thenReturn(contact);
@@ -155,7 +168,7 @@ class EmergencyContactServiceTest {
         // Then
         ArgumentCaptor<EmergencyContact> captor = ArgumentCaptor.forClass(EmergencyContact.class);
         verify(emergencyContactRepository).save(captor.capture());
-        assertEquals((short) 1, captor.getValue().getContactIndex());
+        assertEquals((short) 2, captor.getValue().getContactIndex());
     }
 
     @Test
@@ -244,6 +257,10 @@ class EmergencyContactServiceTest {
         verify(emergencyContactRepository, never()).delete(any(EmergencyContact.class));
     }
 
+    // -------------------------------------------------------------------------
+    // SMS tests
+    // -------------------------------------------------------------------------
+
     @Test
     void sendSmsToAllContacts_SmsEnabled_SendsSms() {
         // Given
@@ -285,6 +302,57 @@ class EmergencyContactServiceTest {
 
         // Then
         verify(emergencyContactRepository).findByUserIdOrderByContactIndexAsc(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Email tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void sendEmailToAllContacts_EmailEnabled_SendsEmail() throws Exception {
+        // Given
+        String subject = "Inactivity Alert";
+        String body = "User has been inactive.";
+        List<EmergencyContact> contacts = List.of(contact);
+        MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
+        when(emailProperties.isEnabled()).thenReturn(true);
+        when(emailProperties.getFromAddress()).thenReturn("noreply@areyoudead.com");
+        when(emailProperties.getSubjectPrefix()).thenReturn("[AreYouAlive]");
+        when(emergencyContactRepository.findByUserIdOrderByContactIndexAsc(userId)).thenReturn(contacts);
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        // When
+        emergencyContactService.sendEmailToAllContacts(userId, subject, body);
+
+        // Then
+        verify(mailSender).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendEmailToAllContacts_EmailDisabled_SkipsEmail() {
+        // Given
+        when(emailProperties.isEnabled()).thenReturn(false);
+
+        // When
+        emergencyContactService.sendEmailToAllContacts(userId, "Alert", "body");
+
+        // Then
+        verify(emergencyContactRepository, never()).findByUserIdOrderByContactIndexAsc(any());
+        verify(mailSender, never()).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendEmailToAllContacts_NoContacts_SkipsEmail() {
+        // Given
+        when(emailProperties.isEnabled()).thenReturn(true);
+        when(emergencyContactRepository.findByUserIdOrderByContactIndexAsc(userId)).thenReturn(new ArrayList<>());
+
+        // When
+        emergencyContactService.sendEmailToAllContacts(userId, "Alert", "body");
+
+        // Then
+        verify(emergencyContactRepository).findByUserIdOrderByContactIndexAsc(userId);
+        verify(mailSender, never()).send(any(MimeMessage.class));
     }
 
     private EmergencyContact createContact(short index) {

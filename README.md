@@ -9,23 +9,38 @@ Set these environment variables (recommended) or edit `src/main/resources/applic
 - `SPRING_DATASOURCE_URL` (default: `jdbc:postgresql://localhost:5432/areyoudead`)
 - `SPRING_DATASOURCE_USERNAME` (default: `areyoudead`)
 - `SPRING_DATASOURCE_PASSWORD` (default: `areyoudead`)
+- `SPRING_DATASOURCE_URL` (default uses UTC; if overriding, append `?options=-c%20TimeZone%3DUTC`)
 - `JWT_SECRET` (**required for real deployments**): HS256 secret, **>= 32 bytes**
 - `JWT_ISSUER` (default: `areyoudead`)
 - `JWT_TTL_SECONDS` (default: `3600`)
 
 ## Run
 
-Start Postgres (optional helper):
+Start Postgres and MailHog (optional helpers):
 
 ```bash
 docker compose up -d
 ```
+
+This starts:
+- **Postgres** on `localhost:5432`
+- **MailHog** (fake SMTP) on `localhost:1025`, Web UI on **http://localhost:8025**
 
 With a local Gradle installation:
 
 ```bash
 gradle bootRun
 ```
+
+### Viewing emails (MailHog)
+
+1. Start MailHog: `docker compose up -d mail`
+2. Open **http://localhost:8025** in your browser
+3. Spring Boot sends emails to `localhost:1025` by default (see `MAIL_HOST`, `MAIL_PORT` in `application.yml`)
+4. Emails appear when the inactive-user scheduler notifies emergency contacts (users inactive for `app.scheduler.inactive-ms`)
+
+**To trigger an email:**
+- Create a user, add emergency contacts (with email), and ensure the user has `last_login_date` older than `app.scheduler.inactive-ms` (default 1 day). The scheduler runs every 10 seconds.
 
 ## API
 
@@ -58,6 +73,13 @@ Returns `200` with `{ tokenType, accessToken, user }`.
 `GET /api/me` with header `Authorization: Bearer <token>`
 
 ## Flyway / Postgres
+
+**Reset Flyway and all tables** (clears migration history and data):
+```bash
+psql -h localhost -U areyoudead -d areyoudead -f scripts/reset-flyway.sql
+# Or with Docker Compose:
+docker compose exec -T postgres psql -U areyoudead -d areyoudead < scripts/reset-flyway.sql
+```
 
 Schema is created by Flyway migration:
 

@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.4.5'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.flywaydb.flyway' version '11.14.0'
 }
 
 group = 'com.areyoudead'
@@ -27,6 +28,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'io.pebbletemplates:pebble:3.2.4'
 
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
@@ -49,5 +52,12 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+flyway {
+	url = project.findProperty('SPRING_DATASOURCE_URL') ?: 'jdbc:postgresql://localhost:5432/areyoudead?options=-c%20TimeZone%3DUTC'
+	user = project.findProperty('SPRING_DATASOURCE_USERNAME') ?: 'areyoudead'
+	password = project.findProperty('SPRING_DATASOURCE_PASSWORD') ?: 'areyoudead'
+	locations = ['classpath:db/migration']
 }
 
