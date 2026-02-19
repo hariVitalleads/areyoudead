@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.areyoudead'
-version = '0.0.1-SNAPSHOT'
+version = project.findProperty('version') ?: '0.0.1-SNAPSHOT'
 
 ext {
 	lombokVersion = '1.18.42'
@@ -52,6 +52,10 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+springBoot {
+	buildInfo()
 }
 
 flyway {
