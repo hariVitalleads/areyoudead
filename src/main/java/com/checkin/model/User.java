@@ -31,6 +31,30 @@ public class User {
 	@Column(name = "password_reset_expires_at")
 	private Instant passwordResetExpiresAt;
 
+	@Column(name = "last_manual_check_in_at")
+	private Instant lastManualCheckInAt;
+
+	@Column(name = "alerts_snoozed_until")
+	private Instant alertsSnoozedUntil;
+
+	@Column(name = "email_verification_token")
+	private String emailVerificationToken;
+
+	@Column(name = "email_verification_token_expires_at")
+	private Instant emailVerificationTokenExpiresAt;
+
+	@Column(name = "email_verified_at")
+	private Instant emailVerifiedAt;
+
+	@Column(name = "inactivity_threshold_days")
+	private Integer inactivityThresholdDays;
+
+	@Column(name = "first_alert_sent_at")
+	private Instant firstAlertSentAt;
+
+	@Column(name = "contacts_alerted_count")
+	private Integer contactsAlertedCount;
+
 	protected User() {}
 
 	public User(UUID id, String email, String passwordHash, Instant createdAt) {
@@ -89,6 +113,70 @@ public class User {
 
 	public void setPasswordResetExpiresAt(Instant passwordResetExpiresAt) {
 		this.passwordResetExpiresAt = passwordResetExpiresAt;
+	}
+
+	public Instant getLastManualCheckInAt() {
+		return lastManualCheckInAt;
+	}
+
+	public void setLastManualCheckInAt(Instant lastManualCheckInAt) {
+		this.lastManualCheckInAt = lastManualCheckInAt;
+	}
+
+	public Instant getAlertsSnoozedUntil() {
+		return alertsSnoozedUntil;
+	}
+
+	public void setAlertsSnoozedUntil(Instant alertsSnoozedUntil) {
+		this.alertsSnoozedUntil = alertsSnoozedUntil;
+	}
+
+	public String getEmailVerificationToken() {
+		return emailVerificationToken;
+	}
+
+	public void setEmailVerificationToken(String emailVerificationToken) {
+		this.emailVerificationToken = emailVerificationToken;
+	}
+
+	public Instant getEmailVerificationTokenExpiresAt() {
+		return emailVerificationTokenExpiresAt;
+	}
+
+	public void setEmailVerificationTokenExpiresAt(Instant emailVerificationTokenExpiresAt) {
+		this.emailVerificationTokenExpiresAt = emailVerificationTokenExpiresAt;
+	}
+
+	public Instant getEmailVerifiedAt() {
+		return emailVerifiedAt;
+	}
+
+	public void setEmailVerifiedAt(Instant emailVerifiedAt) {
+		this.emailVerifiedAt = emailVerifiedAt;
+	}
+
+	public Integer getInactivityThresholdDays() {
+		return inactivityThresholdDays;
+	}
+
+	public void setInactivityThresholdDays(Integer inactivityThresholdDays) {
+		this.inactivityThresholdDays = inactivityThresholdDays;
+	}
+
+	public Instant getFirstAlertSentAt() {
+		return firstAlertSentAt;
+	}
+
+	public void setFirstAlertSentAt(Instant firstAlertSentAt) {
+		this.firstAlertSentAt = firstAlertSentAt;
+	}
+
+	public Integer getContactsAlertedCount() {
+		return contactsAlertedCount;
+	}
+
+	public void setContactsAlertedCount(Integer contactsAlertedCount) {
+		this.contactsAlertedCount = contactsAlertedCount;
 	}
 }
 

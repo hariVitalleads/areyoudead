@@ -15,6 +15,9 @@ public class EmergencyContactRequest {
     @Email
     private String email;
 
+    @Size(max = 50)
+    private String label;
+
     public String getMobileNumber() {
         return mobileNumber;
     }
@@ -29,5 +32,13 @@ public class EmergencyContactRequest {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

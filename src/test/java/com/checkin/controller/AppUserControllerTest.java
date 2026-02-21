@@ -1,7 +1,10 @@
 package com.checkin.controller;
 
 import com.checkin.dto.AppUserDetailsResponse;
+import com.checkin.dto.AuthResponse;
 import com.checkin.dto.ForgotPasswordRequest;
+import com.checkin.dto.LoginRequest;
+import com.checkin.dto.RefreshTokenRequest;
 import com.checkin.dto.RegisterRequest;
 import com.checkin.dto.ResetPasswordRequest;
 import com.checkin.dto.UpdateAppUserRequest;
@@ -66,12 +69,14 @@ class AppUserControllerTest {
 
         private UUID userId;
         private UserResponse userResponse;
+        private AuthResponse authResponse;
         private AppUserDetailsResponse appUserDetailsResponse;
 
         @BeforeEach
         void setUp() {
                 userId = UUID.randomUUID();
                 userResponse = new UserResponse(userId, "test@example.com", Instant.now());
+                authResponse = new AuthResponse("jwt-token", userResponse);
                 appUserDetailsResponse = new AppUserDetailsResponse(
                                 userId, "test@example.com", Instant.now(), Instant.now());
         }
@@ -79,6 +84,40 @@ class AppUserControllerTest {
         @AfterEach
         void tearDown() {
                 SecurityContextHolder.clearContext();
+        }
+
+        @Test
+        @WithAnonymousUser
+        void login_Success() throws Exception {
+                LoginRequest request = new LoginRequest();
+                request.setEmail("test@example.com");
+                request.setPassword("password123");
+
+                when(authService.login(any(LoginRequest.class))).thenReturn(authResponse);
+
+                mockMvc.perform(post("/api/user/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                                .with(csrf()))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.accessToken").value("jwt-token"))
+                        .andExpect(jsonPath("$.user.id").value(userId.toString()));
+        }
+
+        @Test
+        @WithAnonymousUser
+        void refresh_Success() throws Exception {
+                RefreshTokenRequest request = new RefreshTokenRequest();
+                request.setRefreshToken("refresh-token");
+
+                when(authService.refresh(any(String.class))).thenReturn(authResponse);
+
+                mockMvc.perform(post("/api/user/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                                .with(csrf()))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.accessToken").value("jwt-token"));
         }
 
         @Test
@@ -163,7 +202,7 @@ class AppUserControllerTest {
                 UpdateAppUserRequest request = new UpdateAppUserRequest();
                 request.setEmail("newemail@example.com");
 
-                when(appUserService.update(eq(userId), eq("newemail@example.com")))
+                when(appUserService.update(eq(userId), any(UpdateAppUserRequest.class)))
                                 .thenReturn(appUserDetailsResponse);
 
                 // When & Then

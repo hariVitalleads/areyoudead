@@ -1,22 +1,36 @@
 server:
   port: 8080
+  servlet:
+    context-path: /checkin
 
 app:
+  rate-limit:
+    auth-requests-per-window: ${RATE_LIMIT_AUTH_REQUESTS:10}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
   scheduler:
     inactive-ms: ${APP_SCHEDULER_INACTIVE_MS:86400000}
+    # Hours between escalating to next contact (e.g. 24 = notify contact 2 after 24h if no check-in)
+    escalation-interval-hours: ${APP_SCHEDULER_ESCALATION_INTERVAL_HOURS:24}
     emergency-contacts:
       sms:
         enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_SMS_ENABLED:true}
       email:
         enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
+  user:
+    require-email-verification: ${USER_REQUIRE_EMAIL_VERIFICATION:true}
+    verification-token-ttl-seconds: ${USER_VERIFICATION_TTL:86400}
   emergency-contacts:
     max-count: ${EMERGENCY_CONTACTS_MAX_COUNT:3}
+    require-verification: ${EMERGENCY_CONTACTS_REQUIRE_VERIFICATION:true}
+    verification-token-ttl-seconds: ${EMERGENCY_CONTACTS_VERIFICATION_TTL:86400}
     sms:
       enabled: ${EMERGENCY_CONTACTS_SMS_ENABLED:true}
     email:
       enabled: ${EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
       from-address: ${EMERGENCY_CONTACTS_EMAIL_FROM:noreply@checkin.com}
       subject-prefix: ${EMERGENCY_CONTACTS_EMAIL_SUBJECT_PREFIX:[Checkin]}
+      # Required for verification links in emails. Default supports local dev with context-path /checkin.
+      app-base-url: ${APP_BASE_URL:http://localhost:8080/checkin}
 
 spring:
   datasource:
@@ -54,14 +68,23 @@ spring:
 logging:
   level:
     # Set to DEBUG to see generated email HTML in logs
-    com.areyoudead.service.InactiveUserEmailTemplate: ${LOG_LEVEL_EMAIL_TEMPLATE:DEBUG}
-    com.areyoudead.service.EmergencyContactService: ${LOG_LEVEL_EMERGENCY_CONTACT:DEBUG}
+    com.checkin.service.InactiveUserEmailTemplate: ${LOG_LEVEL_EMAIL_TEMPLATE:DEBUG}
+    com.checkin.service.EmergencyContactService: ${LOG_LEVEL_EMERGENCY_CONTACT:DEBUG}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: true
 
 security:
   jwt:
@@ -69,4 +92,5 @@ security:
     # Must be at least 32 bytes for HS256.
     secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-123456}
     issuer: ${JWT_ISSUER:areyoudead}
-    access-token-ttl-seconds: ${JWT_TTL_SECONDS:3600}
+    access-token-ttl-seconds: ${JWT_TTL_SECONDS:300}
+    refresh-token-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:86400}

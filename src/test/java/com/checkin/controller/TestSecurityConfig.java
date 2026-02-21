@@ -1,5 +1,6 @@
 package com.checkin.controller;
 
+import com.checkin.config.RateLimitProperties;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -13,6 +14,14 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @TestConfiguration
 public class TestSecurityConfig {
+
+    @Bean
+    public RateLimitProperties rateLimitProperties() {
+        RateLimitProperties p = new RateLimitProperties();
+        p.setAuthRequestsPerWindow(100);
+        p.setWindowSeconds(60);
+        return p;
+    }
     @Bean
     @Primary
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -20,9 +29,9 @@ public class TestSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/register", "/api/auth/login",
-                                "/api/user/register", "/api/user/forgot-password", "/api/user/reset-password",
-                                "/api/login/register", "/api/login/login", "/api/login/forgot-password", "/api/login/reset-password")
+                                "/api/user/register", "/api/user/login", "/api/user/refresh",
+                                "/api/user/forgot-password", "/api/user/reset-password",
+                                "/api/login/login")
                         .permitAll()
                         .anyRequest().authenticated())
                 .build();

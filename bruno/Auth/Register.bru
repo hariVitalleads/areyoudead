@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/api/auth/register
+  url: http://localhost:8080/checkin/api/user/register
   body: json
   auth: none
 }
@@ -23,6 +23,10 @@ body:json {
     "addressLine1": "{{addressLine1}}",
     "addressLine2": "{{addressLine2}}"
   }
+}
+
+vars:pre-request {
+  email: test@test.com
 }
 
 script:pre-request {

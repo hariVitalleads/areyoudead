@@ -1,7 +1,9 @@
 package com.checkin.service;
 
 import com.checkin.audit.AuditAction;
+import com.checkin.config.AppMetrics;
 import com.checkin.dto.AppUserDetailsResponse;
+import com.checkin.dto.UpdateAppUserRequest;
 import com.checkin.model.User;
 import com.checkin.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +24,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +35,9 @@ class AppUserServiceTest {
 
     @Mock
     private AuditService auditService;
+
+    @Mock
+    private AppMetrics metrics;
 
     @InjectMocks
     private AppUserService appUserService;
@@ -82,30 +88,32 @@ class AppUserServiceTest {
     @Test
     void update_Success_WithEmail() {
         // Given
-        String newEmail = "newemail@example.com";
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("newemail@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(newEmail.toLowerCase())).thenReturn(false);
+        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        AppUserDetailsResponse response = appUserService.update(userId, newEmail);
+        AppUserDetailsResponse response = appUserService.update(userId, req);
 
         // Then
         assertNotNull(response);
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
-        assertEquals(newEmail.toLowerCase(), userCaptor.getValue().getEmail());
+        assertEquals("newemail@example.com", userCaptor.getValue().getEmail());
         verify(auditService).record(userId, AuditAction.UPDATE_DETAILS, "updated user/details");
     }
 
     @Test
     void update_Success_WithNullEmail() {
         // Given
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        AppUserDetailsResponse response = appUserService.update(userId, null);
+        AppUserDetailsResponse response = appUserService.update(userId, req);
 
         // Then
         assertNotNull(response);
@@ -118,11 +126,13 @@ class AppUserServiceTest {
     @Test
     void update_Success_WithBlankEmail() {
         // Given
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("   ");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        AppUserDetailsResponse response = appUserService.update(userId, "   ");
+        AppUserDetailsResponse response = appUserService.update(userId, req);
 
         // Then
         assertNotNull(response);
@@ -134,12 +144,13 @@ class AppUserServiceTest {
     @Test
     void update_SameEmail_NoConflict() {
         // Given
-        String sameEmail = "test@example.com";
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("test@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        AppUserDetailsResponse response = appUserService.update(userId, sameEmail);
+        AppUserDetailsResponse response = appUserService.update(userId, req);
 
         // Then
         assertNotNull(response);
@@ -149,13 +160,14 @@ class AppUserServiceTest {
     @Test
     void update_EmailAlreadyExists_ThrowsConflict() {
         // Given
-        String newEmail = "existing@example.com";
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("existing@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(newEmail.toLowerCase())).thenReturn(true);
+        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
         // When & Then
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> appUserService.update(userId, newEmail));
+                () -> appUserService.update(userId, req));
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("email already registered", exception.getReason());
         verify(userRepository, never()).save(any(User.class));
@@ -164,14 +176,15 @@ class AppUserServiceTest {
     @Test
     void update_DataIntegrityViolation_ThrowsConflict() {
         // Given
-        String newEmail = "newemail@example.com";
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("newemail@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(newEmail.toLowerCase())).thenReturn(false);
+        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("Duplicate"));
 
         // When & Then
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> appUserService.update(userId, newEmail));
+                () -> appUserService.update(userId, req));
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("email already registered", exception.getReason());
     }
@@ -179,11 +192,13 @@ class AppUserServiceTest {
     @Test
     void update_UserNotFound_ThrowsNotFound() {
         // Given
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("newemail@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // When & Then
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> appUserService.update(userId, "newemail@example.com"));
+                () -> appUserService.update(userId, req));
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         assertEquals("user not found", exception.getReason());
     }
@@ -191,13 +206,14 @@ class AppUserServiceTest {
     @Test
     void update_EmailNormalized() {
         // Given
-        String newEmail = "  NEWEMAIL@EXAMPLE.COM  ";
+        UpdateAppUserRequest req = new UpdateAppUserRequest();
+        req.setEmail("  NEWEMAIL@EXAMPLE.COM  ");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
-        appUserService.update(userId, newEmail);
+        appUserService.update(userId, req);
 
         // Then
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);

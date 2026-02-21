@@ -17,4 +17,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 			Instant now);
 
 	List<User> findByLastLoginDateBefore(Instant date);
+
+	Optional<User> findByEmailVerificationToken(String emailVerificationToken);
 }

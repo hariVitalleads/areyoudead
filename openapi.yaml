@@ -126,6 +126,13 @@ components:
           type: string
         resetToken:
           type: string
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
     ResetPasswordRequest:
       type: object
       required:
@@ -250,40 +257,6 @@ components:
         contactIndex:
           type: integer
 paths:
-  /api/auth/register:
-    post:
-      tags:
-        - Auth
-      summary: Register a new user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
-      responses:
-        "201":
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserResponse"
-  /api/auth/login:
-    post:
-      tags:
-        - Auth
-      summary: Login user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
   /api/user/register:
     post:
       tags:
@@ -301,6 +274,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+  /api/user/login:
+    post:
+      tags:
+        - User
+      summary: Login user (canonical)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /api/user/refresh:
+    post:
+      tags:
+        - User
+      summary: Refresh access token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
   /api/user/forgot-password:
     post:
       tags:
@@ -368,28 +375,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AppUserDetailsResponse"
-  /api/login/register:
-    post:
-      tags:
-        - Login
-      summary: Register a new user (via Login controller)
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
-      responses:
-        "201":
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserResponse"
   /api/login/login:
     post:
       tags:
         - Login
-      summary: Login user (via Login controller)
+      summary: Login user (alias; prefer /api/user/login)
       requestBody:
         content:
           application/json:
@@ -402,73 +392,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-  /api/login/me:
-    get:
-      tags:
-        - Login
-      summary: Get current account details
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Account details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AccountDetailsResponse"
-  /api/login/details:
-    put:
-      tags:
-        - Login
-      summary: Update account details
-      security:
-        - bearerAuth: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateDetailsRequest"
-      responses:
-        "200":
-          description: Account details updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AccountDetailsResponse"
-  /api/login/forgot-password:
-    post:
-      tags:
-        - Login
-      summary: Request password reset (via Login controller)
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ForgotPasswordRequest"
-      responses:
-        "202":
-          description: Reset token generated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ForgotPasswordResponse"
-  /api/login/reset-password:
-    post:
-      tags:
-        - Login
-      summary: Reset password (via Login controller)
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ResetPasswordRequest"
-      responses:
-        "200":
-          description: Password updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MessageResponse"
   /api/emergency-contacts:
     get:
       tags:

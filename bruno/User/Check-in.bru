@@ -1,0 +1,15 @@
+meta {
+  name: Check-in
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:8080/checkin/api/user/check-in
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

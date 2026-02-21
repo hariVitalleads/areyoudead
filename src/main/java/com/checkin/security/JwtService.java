@@ -8,8 +8,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.stereotype.Service;
 
@@ -41,6 +45,25 @@ public class JwtService {
 			.expiration(Date.from(exp))
 			.signWith(key, SignatureAlgorithm.HS256)
 			.compact();
+	}
+
+	/** Creates a refresh token string (opaque, to be hashed before storage). */
+	public String createRefreshTokenValue() {
+		return UUID.randomUUID().toString() + "-" + System.nanoTime();
+	}
+
+	public long getRefreshTokenTtlSeconds() {
+		return props.getRefreshTokenTtlSeconds();
+	}
+
+	public static String hashToken(String token) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			byte[] hash = md.digest(token.getBytes(StandardCharsets.UTF_8));
+			return Base64.getEncoder().encodeToString(hash);
+		} catch (NoSuchAlgorithmException e) {
+			throw new IllegalStateException("SHA-256 not available", e);
+		}
 	}
 
 	public Jws<Claims> parseAndValidate(String token) {

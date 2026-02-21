@@ -1,0 +1,21 @@
+meta {
+  name: Refresh
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/checkin/api/user/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+vars:pre-request {
+  refreshToken: 23455
+}

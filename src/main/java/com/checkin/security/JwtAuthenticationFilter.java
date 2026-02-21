@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.MDC;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -68,6 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			);
 			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 			SecurityContextHolder.getContext().setAuthentication(authentication);
+			MDC.put(com.checkin.config.MdcFilter.USER_ID, userId.toString());
 
 			filterChain.doFilter(request, response);
 		} catch (JwtException | IllegalArgumentException ex) {

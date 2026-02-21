@@ -18,11 +18,34 @@ public class EmergencyContactLimitProperties {
     @Max(20)
     private int maxCount = 3;
 
+    /** When true, only verified contacts receive inactivity alerts. */
+    private boolean requireVerification = true;
+
+    /** Verification token validity in seconds (default 24 hours). */
+    @Min(60)
+    private int verificationTokenTtlSeconds = 86400;
+
     public int getMaxCount() {
         return maxCount;
     }
 
     public void setMaxCount(int maxCount) {
         this.maxCount = maxCount;
+    }
+
+    public boolean isRequireVerification() {
+        return requireVerification;
+    }
+
+    public void setRequireVerification(boolean requireVerification) {
+        this.requireVerification = requireVerification;
+    }
+
+    public int getVerificationTokenTtlSeconds() {
+        return verificationTokenTtlSeconds;
+    }
+
+    public void setVerificationTokenTtlSeconds(int verificationTokenTtlSeconds) {
+        this.verificationTokenTtlSeconds = verificationTokenTtlSeconds;
     }
 }

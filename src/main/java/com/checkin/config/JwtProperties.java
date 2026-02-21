@@ -17,6 +17,9 @@ public class JwtProperties {
 	@Min(60)
 	private long accessTokenTtlSeconds = 3600;
 
+	@Min(60)
+	private long refreshTokenTtlSeconds = 86400; // 1 day (24h)
+
 	public String getSecret() {
 		return secret;
 	}
@@ -39,6 +42,14 @@ public class JwtProperties {
 
 	public void setAccessTokenTtlSeconds(long accessTokenTtlSeconds) {
 		this.accessTokenTtlSeconds = accessTokenTtlSeconds;
+	}
+
+	public long getRefreshTokenTtlSeconds() {
+		return refreshTokenTtlSeconds;
+	}
+
+	public void setRefreshTokenTtlSeconds(long refreshTokenTtlSeconds) {
+		this.refreshTokenTtlSeconds = refreshTokenTtlSeconds;
 	}
 }
 

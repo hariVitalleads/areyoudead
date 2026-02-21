@@ -5,8 +5,13 @@ import com.checkin.dto.AuthResponse;
 import com.checkin.dto.LoginRequest;
 import com.checkin.dto.RegisterRequest;
 import com.checkin.dto.UserResponse;
+import com.checkin.config.AppMetrics;
+import com.checkin.config.EmailProperties;
+import com.checkin.config.UserVerificationProperties;
+import com.checkin.model.RefreshToken;
 import com.checkin.model.Registration;
 import com.checkin.model.User;
+import com.checkin.repository.RefreshTokenRepository;
 import com.checkin.repository.RegistrationRepository;
 import com.checkin.repository.UserRepository;
 import com.checkin.security.JwtService;
@@ -49,6 +54,24 @@ class AuthServiceTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private AppMetrics metrics;
+
+    @Mock
+    private EmailProperties emailProperties;
+
+    @Mock
+    private UserVerificationProperties userVerificationProperties;
+
+    @Mock
+    private org.springframework.mail.javamail.JavaMailSender mailSender;
+
+    @Mock
+    private UserVerificationTemplate userVerificationTemplate;
+
     @InjectMocks
     private AuthService authService;
 
@@ -66,7 +89,10 @@ class AuthServiceTest {
         Instant createdAt = Instant.now();
 
         user = new User(userId, email, "hashedPassword", createdAt);
+        user.setEmailVerifiedAt(Instant.now()); // Required for login when verification is enforced
         registration = new Registration(userId, "STANDARD", false, null);
+
+        org.mockito.Mockito.lenient().when(userVerificationProperties.isRequireEmailVerification()).thenReturn(false);
     }
 
     @Test
@@ -185,6 +211,9 @@ class AuthServiceTest {
         when(passwordEncoder.matches(password, user.getPasswordHash())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.createAccessToken(user)).thenReturn(token);
+        when(jwtService.createRefreshTokenValue()).thenReturn("refresh-token-value");
+        when(jwtService.getRefreshTokenTtlSeconds()).thenReturn(604800L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
 
         // When
         AuthResponse response = authService.login(request);
@@ -192,6 +221,7 @@ class AuthServiceTest {
         // Then
         assertNotNull(response);
         assertEquals(token, response.getAccessToken());
+        assertNotNull(response.getRefreshToken());
         assertNotNull(response.getUser());
         assertEquals(userId, response.getUser().getId());
         verify(userRepository).findByEmail(email.toLowerCase());
@@ -249,6 +279,9 @@ class AuthServiceTest {
         when(passwordEncoder.matches(password, user.getPasswordHash())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.createAccessToken(user)).thenReturn(token);
+        when(jwtService.createRefreshTokenValue()).thenReturn("refresh-token-value");
+        when(jwtService.getRefreshTokenTtlSeconds()).thenReturn(604800L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
 
         // When
         authService.login(request);
@@ -271,6 +304,9 @@ class AuthServiceTest {
         when(passwordEncoder.matches(password, user.getPasswordHash())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.createAccessToken(user)).thenReturn(token);
+        when(jwtService.createRefreshTokenValue()).thenReturn("refresh-token-value");
+        when(jwtService.getRefreshTokenTtlSeconds()).thenReturn(604800L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
 
         // When
         authService.login(request);

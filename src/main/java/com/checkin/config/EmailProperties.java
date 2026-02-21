@@ -26,6 +26,9 @@ public class EmailProperties {
     /** Prefix prepended to every alert email subject, e.g. "[Checkin]". */
     private String subjectPrefix = "[Checkin]";
 
+    /** Base URL for links in emails (e.g. https://checkin.example.com). Used for opt-out link. */
+    private String appBaseUrl = "";
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -48,5 +51,13 @@ public class EmailProperties {
 
     public void setSubjectPrefix(String subjectPrefix) {
         this.subjectPrefix = subjectPrefix;
+    }
+
+    public String getAppBaseUrl() {
+        return appBaseUrl;
+    }
+
+    public void setAppBaseUrl(String appBaseUrl) {
+        this.appBaseUrl = appBaseUrl;
     }
 }

@@ -1,6 +1,8 @@
 package com.checkin.scheduler;
 
+import com.checkin.config.AppMetrics;
 import com.checkin.model.User;
+import com.checkin.repository.EmergencyContactRepository;
 import com.checkin.repository.UserRepository;
 import com.checkin.service.EmergencyContactService;
 import java.time.Instant;
@@ -11,67 +13,130 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
 
 @Component
 public class InactiveUserScheduler {
     private static final Logger log = LoggerFactory.getLogger(InactiveUserScheduler.class);
 
     private final UserRepository userRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
     private final EmergencyContactService emergencyContactService;
-    private final long inactiveMs;
+    private final AppMetrics metrics;
+    private final long defaultInactiveMs;
+    private final long escalationIntervalMs;
     private final boolean smsEnabled;
     private final boolean emailEnabled;
 
     public InactiveUserScheduler(
             UserRepository userRepository,
+            EmergencyContactRepository emergencyContactRepository,
             EmergencyContactService emergencyContactService,
-            @Value("${app.scheduler.inactive-ms:86400000}") long inactiveMs,
+            AppMetrics metrics,
+            @Value("${app.scheduler.inactive-ms:86400000}") long defaultInactiveMs,
+            @Value("${app.scheduler.escalation-interval-hours:24}") long escalationIntervalHours,
             @Value("${app.scheduler.emergency-contacts.sms.enabled:true}") boolean smsEnabled,
             @Value("${app.scheduler.emergency-contacts.email.enabled:true}") boolean emailEnabled) {
         this.userRepository = userRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
         this.emergencyContactService = emergencyContactService;
-        this.inactiveMs = inactiveMs;
+        this.metrics = metrics;
+        this.defaultInactiveMs = defaultInactiveMs;
+        this.escalationIntervalMs = escalationIntervalHours * 3600 * 1000;
         this.smsEnabled = smsEnabled;
         this.emailEnabled = emailEnabled;
     }
 
     @Scheduled(fixedRate = 10000) // Every 10 seconds
     public void checkInactiveUsers() {
-        log.info("Starting daily check for inactive users (threshold: {} ms)", inactiveMs);
+        metrics.recordSchedulerRun();
+        metrics.getSchedulerDurationTimer().record(() -> {
+        try {
+            Instant now = Instant.now();
+            Instant minCutoff = now.minusMillis(Math.min(defaultInactiveMs, 86400000L)); // At least 1 day lookback
+            List<User> candidates = userRepository.findByLastLoginDateBefore(minCutoff);
 
-        Instant cutoffDate = Instant.now().minusMillis(inactiveMs);
-        log.info("Cutoff date: {}", cutoffDate);
-        List<User> inactiveUsers = userRepository.findByLastLoginDateBefore(cutoffDate);
-        Optional<User> user = userRepository.findByEmail("user_tmuara@example.com");
-        user.ifPresent(u -> {
-            log.info("User found: ID={}, Email={}, LastLogin={}", u.getId(), u.getEmail(), u.getLastLoginDate());
+            List<User> inactiveUsers = candidates.stream()
+                .filter(u -> u.getAlertsSnoozedUntil() == null || u.getAlertsSnoozedUntil().isBefore(now))
+                .filter(u -> isInactive(u, now))
+                .toList();
 
-            if (emailEnabled) {
-                emergencyContactService.sendInactiveUserAlertToContacts(user.get(), inactiveMs);
+            if (inactiveUsers.isEmpty()) {
+                log.debug("No inactive users found.");
+                return;
             }
+
+            log.info("Found {} inactive user(s).", inactiveUsers.size());
+            for (User user : inactiveUsers) {
+                long effectiveInactiveMs = effectiveInactiveMs(user);
+                Instant effectiveCutoff = now.minusMillis(effectiveInactiveMs);
+                Instant lastActivity = latestActivity(user);
+                if (lastActivity != null && !lastActivity.isBefore(effectiveCutoff)) {
+                    continue;
+                }
+                long actualInactiveMs = lastActivity != null ? now.toEpochMilli() - lastActivity.toEpochMilli() : effectiveInactiveMs;
+
+                int contactCount = emergencyContactRepository.findByUserIdOrderByContactIndexAsc(user.getId()).size();
+                if (contactCount < 1) continue;
+
+                int escalationLevel = computeEscalationLevel(user, now);
+                int contactsToNotify = Math.min(escalationLevel, contactCount);
+                int currentCount = user.getContactsAlertedCount() != null ? user.getContactsAlertedCount() : 0;
+
+                if (contactsToNotify <= currentCount) continue;
+
+                user.setFirstAlertSentAt(user.getFirstAlertSentAt() != null ? user.getFirstAlertSentAt() : now);
+                user.setContactsAlertedCount(contactsToNotify);
+                userRepository.save(user);
+
+                log.info("Inactive user: ID={}, Email={}, LastLogin={}, escalation={}/{}",
+                        user.getId(), user.getEmail(), user.getLastLoginDate(), contactsToNotify, contactCount);
+
+                if (smsEnabled) {
+                    String smsMessage = String.format(
+                            "Alert: User %s (%s) has been inactive. Last activity: %s",
+                            user.getEmail(), user.getId(), lastActivity);
+                    emergencyContactService.sendSmsToContactsUpTo(user.getId(), smsMessage, contactsToNotify);
+                }
+                if (emailEnabled) {
+                    emergencyContactService.sendInactiveUserAlertToContactsUpTo(user, actualInactiveMs, contactsToNotify);
+                }
+            }
+        } catch (Exception e) {
+            metrics.recordSchedulerFailure();
+            log.error("Scheduler failed while checking inactive users", e);
+            throw new RuntimeException(e);
+        }
         });
-        /*
-        if (inactiveUsers.isEmpty()) {
-            log.info("No inactive users found.");
-            return;
-        }
+    }
 
-        log.info("Found {} inactive users.", inactiveUsers.size());
-        for (User user : inactiveUsers) {
-            log.info("Inactive User Detected: ID={}, Email={}, LastLogin={}",
-                    user.getId(), user.getEmail(), user.getLastLoginDate());
+    private boolean isInactive(User user, Instant now) {
+        Instant cutoff = now.minusMillis(effectiveInactiveMs(user));
+        Instant last = latestActivity(user);
+        return last == null || last.isBefore(cutoff);
+    }
 
-            if (smsEnabled) {
-                String smsMessage = String.format(
-                        "Alert: User %s (%s) has been inactive for %d ms. Last login: %s",
-                        user.getEmail(), user.getId(), inactiveMs, user.getLastLoginDate());
-                emergencyContactService.sendSmsToAllContacts(user.getId(), smsMessage);
-            }
-            if (emailEnabled) {
-                emergencyContactService.sendInactiveUserAlertToContacts(user, inactiveMs);
-            }
+    private long effectiveInactiveMs(User user) {
+        if (user.getInactivityThresholdDays() != null && user.getInactivityThresholdDays() >= 1) {
+            return user.getInactivityThresholdDays() * 86_400_000L;
         }
-             */
+        return defaultInactiveMs;
+    }
+
+    private Instant latestActivity(User user) {
+        Instant lastLogin = user.getLastLoginDate();
+        Instant lastCheckIn = user.getLastManualCheckInAt();
+        if (lastLogin == null && lastCheckIn == null) return null;
+        if (lastLogin == null) return lastCheckIn;
+        if (lastCheckIn == null) return lastLogin;
+        return lastLogin.isAfter(lastCheckIn) ? lastLogin : lastCheckIn;
+    }
+
+    private int computeEscalationLevel(User user, Instant now) {
+        if (user.getFirstAlertSentAt() == null) {
+            return 1;
+        }
+        long elapsedMs = now.toEpochMilli() - user.getFirstAlertSentAt().toEpochMilli();
+        int steps = (int) (elapsedMs / escalationIntervalMs);
+        return 1 + Math.max(0, steps);
     }
 }

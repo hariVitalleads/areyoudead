@@ -44,9 +44,11 @@ gradle bootRun
 
 ## API
 
+The canonical API is `/api/user`. Use these endpoints:
+
 ### Register
 
-`POST /api/auth/register`
+`POST /api/user/register`
 
 Body:
 
@@ -54,11 +56,11 @@ Body:
 { "email": "user@example.com", "password": "password123" }
 ```
 
-Returns `201` with `{ tokenType, accessToken, user }`.
+Returns `201` with `{ id, email, createdAt }`.
 
 ### Login
 
-`POST /api/auth/login`
+`POST /api/user/login` (alias: `POST /api/login/login`)
 
 Body:
 
@@ -68,9 +70,19 @@ Body:
 
 Returns `200` with `{ tokenType, accessToken, user }`.
 
-### Me (JWT-protected example)
+### Refresh
 
-`GET /api/me` with header `Authorization: Bearer <token>`
+`POST /api/user/refresh`
+
+Body:
+
+```json
+{ "refreshToken": "<refresh-token>" }
+```
+
+### Me (JWT-protected)
+
+`GET /api/user/me` with header `Authorization: Bearer <token>`
 
 ## Flyway / Postgres
 

@@ -2,6 +2,7 @@ package com.checkin.controller;
 
 import com.checkin.dto.EmergencyContactRequest;
 import com.checkin.dto.EmergencyContactResponse;
+import com.checkin.dto.MessageResponse;
 import com.checkin.security.CurrentUser;
 import com.checkin.security.UserPrincipal;
 import com.checkin.service.EmergencyContactService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,5 +52,26 @@ public class EmergencyContactController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteContact(@CurrentUser UserPrincipal principal, @PathVariable UUID id) {
         emergencyContactService.deleteContact(principal.getUserId(), id);
+    }
+
+    /**
+     * Public endpoint: verify contact email. Called when contact clicks verification link.
+     */
+    @GetMapping("/verify/{token}")
+    @ResponseStatus(HttpStatus.OK)
+    public MessageResponse verify(@PathVariable String token) {
+        emergencyContactService.verifyByToken(token);
+        return new MessageResponse("Your email has been verified. You will receive inactivity alerts for this contact.");
+    }
+
+    /**
+     * Public endpoint: opt out from receiving future inactivity alerts.
+     * Called when emergency contact clicks the opt-out link in an alert email.
+     */
+    @GetMapping("/opt-out/{token}")
+    @ResponseStatus(HttpStatus.OK)
+    public MessageResponse optOut(@PathVariable UUID token) {
+        emergencyContactService.optOutByToken(token);
+        return new MessageResponse("You have been opted out of future alerts.");
     }
 }

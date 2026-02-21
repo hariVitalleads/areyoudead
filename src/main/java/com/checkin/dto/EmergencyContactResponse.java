@@ -7,12 +7,24 @@ public class EmergencyContactResponse {
     private final String mobileNumber;
     private final String email;
     private final short contactIndex;
+    private final boolean verified;
+    private final String label;
 
     public EmergencyContactResponse(UUID id, String mobileNumber, String email, short contactIndex) {
+        this(id, mobileNumber, email, contactIndex, false, null);
+    }
+
+    public EmergencyContactResponse(UUID id, String mobileNumber, String email, short contactIndex, boolean verified) {
+        this(id, mobileNumber, email, contactIndex, verified, null);
+    }
+
+    public EmergencyContactResponse(UUID id, String mobileNumber, String email, short contactIndex, boolean verified, String label) {
         this.id = id;
         this.mobileNumber = mobileNumber;
         this.email = email;
         this.contactIndex = contactIndex;
+        this.verified = verified;
+        this.label = label;
     }
 
     public UUID getId() {
@@ -29,5 +41,13 @@ public class EmergencyContactResponse {
 
     public short getContactIndex() {
         return contactIndex;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public String getLabel() {
+        return label;
     }
 }

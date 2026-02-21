@@ -27,17 +27,16 @@ public class SecurityConfig {
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.POST,
-								"/api/auth/register",
-								"/api/auth/login",
-								"/api/login/signup",
-								"/api/login/login",
-								"/api/login/forgot-password",
-								"/api/login/reset-password",
 								"/api/user/register",
-								"/api/user/signup",
+								"/api/user/login",
+								"/api/user/refresh",
 								"/api/user/forgot-password",
-								"/api/user/reset-password")
+								"/api/user/reset-password",
+								"/api/login/login")
 						.permitAll()
+						.requestMatchers(HttpMethod.GET,
+								"/api/user/verify-email/**",
+								"/api/emergency-contacts/verify/**", "/api/emergency-contacts/opt-out/**").permitAll()
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/error").permitAll()
 						.anyRequest().authenticated())

@@ -1,5 +1,6 @@
 package com.checkin.service;
 
+import com.checkin.config.AppMetrics;
 import com.checkin.config.EmailProperties;
 import com.checkin.config.EmergencyContactLimitProperties;
 import com.checkin.config.EmergencyContactProperties;
@@ -55,6 +56,9 @@ class EmergencyContactServiceTest {
 
     @Mock
     private InactiveUserEmailTemplate inactiveUserEmailTemplate;
+
+    @Mock
+    private AppMetrics metrics;
 
     @InjectMocks
     private EmergencyContactService emergencyContactService;
