@@ -1,6 +1,6 @@
 {
     "version": "1",
-    "name": "AreYouDead API",
+    "name": "Checkin API",
     "type": "collection",
     "ignore": [
         ".git"

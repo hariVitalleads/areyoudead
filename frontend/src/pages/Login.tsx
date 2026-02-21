@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Are You Dead</h1>
+        <h1>Checkin</h1>
         <p className="subtitle">Sign in to your account</p>
         <form onSubmit={handleSubmit}>
           {error && <div className="error">{error}</div>}

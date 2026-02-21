@@ -10,12 +10,13 @@ app:
       email:
         enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
   emergency-contacts:
+    max-count: ${EMERGENCY_CONTACTS_MAX_COUNT:3}
     sms:
       enabled: ${EMERGENCY_CONTACTS_SMS_ENABLED:true}
     email:
       enabled: ${EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
-      from-address: ${EMERGENCY_CONTACTS_EMAIL_FROM:noreply@areyoudead.com}
-      subject-prefix: ${EMERGENCY_CONTACTS_EMAIL_SUBJECT_PREFIX:[AreYouAlive]}
+      from-address: ${EMERGENCY_CONTACTS_EMAIL_FROM:noreply@checkin.com}
+      subject-prefix: ${EMERGENCY_CONTACTS_EMAIL_SUBJECT_PREFIX:[Checkin]}
 
 spring:
   datasource:

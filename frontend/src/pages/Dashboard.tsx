@@ -7,7 +7,7 @@ export default function Dashboard() {
   return (
     <div className="page">
       <div className="card hero">
-        <h1>Are You Dead</h1>
+        <h1>Checkin</h1>
         <p className="subtitle">
           Peace of mind for your loved ones. If you become inactive, we notify
           your emergency contacts.

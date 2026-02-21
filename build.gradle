@@ -5,7 +5,7 @@ plugins {
 	id 'org.flywaydb.flyway' version '11.14.0'
 }
 
-group = 'com.areyoudead'
+group = 'com.checkin'
 version = project.findProperty('version') ?: '0.0.1-SNAPSHOT'
 
 ext {

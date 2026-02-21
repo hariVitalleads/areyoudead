@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="layout">
       <header>
-        <Link to="/" className="logo">Are You Dead</Link>
+        <Link to="/" className="logo">Checkin</Link>
         {token && (
           <nav>
             <Link to="/">Dashboard</Link>

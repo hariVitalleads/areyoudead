@@ -2,10 +2,10 @@
 <configuration scan="true">
 	<!-- Configurable via env:
 	     LOG_PATH=/path/to/logs
-	     LOG_FILE=areyoudead
+	     LOG_FILE=checkin
 	-->
 	<property name="LOG_PATH" value="${LOG_PATH:-./logs}"/>
-	<property name="LOG_FILE" value="${LOG_FILE:-areyoudead}"/>
+	<property name="LOG_FILE" value="${LOG_FILE:-checkin}"/>
 
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
@@ -30,7 +30,7 @@
 
 	<logger name="org.springframework" level="INFO"/>
 	<logger name="org.hibernate" level="WARN"/>
-	<logger name="com.areyoudead" level="INFO"/>
+	<logger name="com.checkin" level="INFO"/>
 
 	<root level="INFO">
 		<appender-ref ref="CONSOLE"/>

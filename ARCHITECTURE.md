@@ -1,4 +1,4 @@
-# AreYouDead — Architecture Diagram
+# Checkin — Architecture Diagram
 
 ## Tech Stack
 
@@ -113,8 +113,8 @@ flowchart TD
 ## Package Structure
 
 ```
-com.areyoudead
-├── AreYouDeadApplication          ← Spring Boot entry point
+com.checkin
+├── CheckinApplication            ← Spring Boot entry point
 ├── audit/
 │   └── AuditAction                ← Enum (LOGIN, UPDATE_DETAILS, …)
 ├── config/

@@ -1,6 +1,6 @@
-# Are You Dead – Frontend
+# Checkin – Frontend
 
-React web application for the Are You Dead API.
+React web application for the Checkin API.
 
 ## Setup
 

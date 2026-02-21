@@ -1,4 +1,4 @@
-# AreYouDead (Spring Boot + JWT + Postgres)
+# Checkin (Spring Boot + JWT + Postgres)
 
 Java + Spring Boot (Gradle) API with JWT authentication and Flyway-managed Postgres schema.
 
