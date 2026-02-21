@@ -3,7 +3,7 @@ info:
   title: Checkin API
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/checkin
 components:
   securitySchemes:
     bearerAuth:
@@ -89,6 +89,8 @@ components:
           type: string
         accessToken:
           type: string
+        refreshToken:
+          type: string
         user:
           $ref: "#/components/schemas/UserResponse"
     AppUserDetailsResponse:
@@ -105,12 +107,30 @@ components:
         lastLoginDate:
           type: string
           format: date-time
+        inactivityThresholdDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          description: Per-user inactivity threshold in days. Null uses global default.
     UpdateAppUserRequest:
       type: object
       properties:
         email:
           type: string
           format: email
+        inactivityThresholdDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          description: Per-user inactivity threshold in days (1-90). Omit to keep current.
+    CheckInRequest:
+      type: object
+      properties:
+        snoozeDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          description: Optional. Snooze alerts for this many days.
     ForgotPasswordRequest:
       type: object
       required:
@@ -244,6 +264,10 @@ components:
         email:
           type: string
           format: email
+        label:
+          type: string
+          maxLength: 50
+          description: Optional label (e.g. "Primary", "Mom")
     EmergencyContactResponse:
       type: object
       properties:
@@ -256,6 +280,12 @@ components:
           type: string
         contactIndex:
           type: integer
+        verified:
+          type: boolean
+          description: Whether contact has verified their email
+        label:
+          type: string
+          description: Optional label (e.g. "Primary", "Mom")
 paths:
   /api/user/register:
     post:
@@ -356,6 +386,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AppUserDetailsResponse"
+  /api/user/verify-email/{token}:
+    get:
+      tags:
+        - User
+      summary: Verify user email (from registration email link)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Invalid or expired token
+        "410":
+          description: Already verified or link expired
+  /api/user/check-in:
+    post:
+      tags:
+        - User
+      summary: Manual check-in ("I'm okay"). Optionally snooze alerts.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInRequest"
+        required: false
+      responses:
+        "200":
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
   /api/user/details:
     put:
       tags:
@@ -468,3 +540,48 @@ paths:
       responses:
         "204":
           description: Emergency contact deleted
+  /api/emergency-contacts/verify/{token}:
+    get:
+      tags:
+        - Emergency Contacts
+      summary: Verify emergency contact email (from verification link)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Invalid or expired token
+        "410":
+          description: Already verified or link expired
+  /api/emergency-contacts/opt-out/{token}:
+    get:
+      tags:
+        - Emergency Contacts
+      summary: Opt out from future alerts (from link in alert email)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Opted out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Invalid or expired token
+        "410":
+          description: Already opted out
