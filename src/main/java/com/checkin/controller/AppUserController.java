@@ -1,6 +1,7 @@
 package com.checkin.controller;
 
 import com.checkin.dto.AppUserDetailsResponse;
+import com.checkin.dto.AuditEventResponse;
 import com.checkin.dto.AuthResponse;
 import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.ForgotPasswordResponse;
@@ -14,8 +15,11 @@ import com.checkin.dto.UserResponse;
 import com.checkin.security.CurrentUser;
 import com.checkin.security.UserPrincipal;
 import com.checkin.service.AppUserService;
+import com.checkin.service.AuditService;
 import com.checkin.service.AuthService;
 import com.checkin.service.LoginService;
+
+import java.util.List;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,11 +38,14 @@ public class AppUserController {
 	private final AuthService authService;
 	private final LoginService loginService;
 	private final AppUserService appUserService;
+	private final AuditService auditService;
 
-	public AppUserController(AuthService authService, LoginService loginService, AppUserService appUserService) {
+	public AppUserController(AuthService authService, LoginService loginService, AppUserService appUserService,
+			AuditService auditService) {
 		this.authService = authService;
 		this.loginService = loginService;
 		this.appUserService = appUserService;
+		this.auditService = auditService;
 	}
 
 	@PostMapping("/register")
@@ -83,6 +90,11 @@ public class AppUserController {
 	@GetMapping("/me")
 	public AppUserDetailsResponse me(@CurrentUser UserPrincipal principal) {
 		return appUserService.me(principal.getUserId());
+	}
+
+	@GetMapping("/audit-events")
+	public List<AuditEventResponse> getAuditEvents(@CurrentUser UserPrincipal principal) {
+		return auditService.listForUser(principal.getUserId());
 	}
 
 	@PostMapping("/check-in")

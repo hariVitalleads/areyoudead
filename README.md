@@ -84,6 +84,21 @@ Body:
 
 `GET /api/user/me` with header `Authorization: Bearer <token>`
 
+### Admin (super user only)
+
+Users with `super_user = true` can access `/api/admin/*` endpoints for audit purposes:
+
+- `GET /api/admin/users` — list all users (summary)
+- `GET /api/admin/users/{userId}` — full audit view (user details, audit events, emergency contacts)
+
+**Create a super user:** promote an existing user via SQL:
+
+```sql
+UPDATE app_user SET super_user = true WHERE email = 'admin@example.com';
+```
+
+Super users log in via `POST /api/user/login` (same as regular users). The JWT includes a `super_user` claim that grants `ROLE_SUPER_USER`.
+
 ## Flyway / Postgres
 
 **Reset Flyway and all tables** (clears migration history and data):

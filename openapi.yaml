@@ -112,6 +112,16 @@ components:
           minimum: 1
           maximum: 90
           description: Per-user inactivity threshold in days. Null uses global default.
+        alertChannelPreference:
+          type: string
+          enum: [EMAIL, SMS, BOTH]
+          description: How emergency contacts are notified (email, SMS, or both).
+        firstName:
+          type: string
+        lastName:
+          type: string
+        mobileNumber:
+          type: string
     UpdateAppUserRequest:
       type: object
       properties:
@@ -123,6 +133,21 @@ components:
           minimum: 1
           maximum: 90
           description: Per-user inactivity threshold in days (1-90). Omit to keep current.
+        alertChannelPreference:
+          type: string
+          enum: [EMAIL, SMS, BOTH]
+          description: How to notify emergency contacts when inactive. Omit to keep current.
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        mobileNumber:
+          type: string
+          pattern: '^[0-9+\-()\s]+$'
+          minLength: 6
+          maxLength: 20
     CheckInRequest:
       type: object
       properties:
@@ -170,6 +195,21 @@ components:
       properties:
         message:
           type: string
+    AuditEventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          description: Audit action (e.g. LOGIN, CHECK_IN, UPDATE_DETAILS)
+        details:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
     UpdateDetailsRequest:
       type: object
       properties:
@@ -286,6 +326,75 @@ components:
         label:
           type: string
           description: Optional label (e.g. "Primary", "Mom")
+    AdminUserSummaryResponse:
+      type: object
+      description: User summary for admin audit list (excludes sensitive data)
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastManualCheckInAt:
+          type: string
+          format: date-time
+          nullable: true
+        inactivityThresholdDays:
+          type: integer
+          nullable: true
+        alertChannelPreference:
+          type: string
+          enum: [EMAIL, SMS, BOTH]
+          nullable: true
+    AdminUserAuditResponse:
+      type: object
+      description: Full audit view for a user (details, audit events, emergency contacts)
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastManualCheckInAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstAlertSentAt:
+          type: string
+          format: date-time
+          nullable: true
+        contactsAlertedCount:
+          type: integer
+          nullable: true
+        inactivityThresholdDays:
+          type: integer
+          nullable: true
+        alertChannelPreference:
+          type: string
+          enum: [EMAIL, SMS, BOTH]
+          nullable: true
+        auditEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEventResponse"
+        emergencyContacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmergencyContactResponse"
 paths:
   /api/user/register:
     post:
@@ -386,6 +495,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AppUserDetailsResponse"
+  /api/user/audit-events:
+    get:
+      tags:
+        - User
+      summary: List audit events for the logged-in user (newest first)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEventResponse"
   /api/user/verify-email/{token}:
     get:
       tags:
@@ -464,6 +589,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
+  /api/admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List all users for audit (super user only)
+      description: Requires ROLE_SUPER_USER. Super users log in via POST /api/user/login.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of user summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserSummaryResponse"
+        "403":
+          description: Not a super user
+  /api/admin/users/{userId}:
+    get:
+      tags:
+        - Admin
+      summary: Full audit view for a user (super user only)
+      description: User details, audit events, and emergency contacts. Records ADMIN_VIEWED_USER.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Full audit details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserAuditResponse"
+        "403":
+          description: Not a super user
+        "404":
+          description: User not found
   /api/emergency-contacts:
     get:
       tags:

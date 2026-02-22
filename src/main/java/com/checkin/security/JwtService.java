@@ -37,14 +37,16 @@ public class JwtService {
 		Instant now = Instant.now();
 		Instant exp = now.plusSeconds(props.getAccessTokenTtlSeconds());
 
-		return Jwts.builder()
+		var builder = Jwts.builder()
 			.issuer(props.getIssuer())
 			.subject(user.getId().toString())
 			.claim("email", user.getEmail())
 			.issuedAt(Date.from(now))
-			.expiration(Date.from(exp))
-			.signWith(key, SignatureAlgorithm.HS256)
-			.compact();
+			.expiration(Date.from(exp));
+		if (user.isSuperUser()) {
+			builder.claim("super_user", true);
+		}
+		return builder.signWith(key, SignatureAlgorithm.HS256).compact();
 	}
 
 	/** Creates a refresh token string (opaque, to be hashed before storage). */

@@ -33,6 +33,7 @@ public class TestSecurityConfig {
                                 "/api/user/forgot-password", "/api/user/reset-password",
                                 "/api/login/login")
                         .permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("SUPER_USER")
                         .anyRequest().authenticated())
                 .build();
     }

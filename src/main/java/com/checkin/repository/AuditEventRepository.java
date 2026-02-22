@@ -1,8 +1,12 @@
 package com.checkin.repository;
 import com.checkin.model.AuditEvent;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {}
+public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
+
+	List<AuditEvent> findByUserIdOrderByCreatedAtDesc(UUID userId);
+}
 

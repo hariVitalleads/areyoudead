@@ -39,6 +39,7 @@ public class SecurityConfig {
 								"/api/emergency-contacts/verify/**", "/api/emergency-contacts/opt-out/**").permitAll()
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/error").permitAll()
+						.requestMatchers("/api/admin/**").hasRole("SUPER_USER")
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 				.build();

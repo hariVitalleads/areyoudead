@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -60,12 +61,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 			UUID userId = UUID.fromString(claims.getSubject());
 			String email = claims.get("email", String.class);
+			Boolean superUser = claims.get("super_user", Boolean.class);
 			UserPrincipal principal = new UserPrincipal(userId, email);
+
+			List<SimpleGrantedAuthority> authorities = Boolean.TRUE.equals(superUser)
+				? List.of(new SimpleGrantedAuthority("ROLE_SUPER_USER"), new SimpleGrantedAuthority("ROLE_USER"))
+				: List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
 			var authentication = new UsernamePasswordAuthenticationToken(
 				principal,
 				null,
-				List.of()
+				authorities
 			);
 			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 			SecurityContextHolder.getContext().setAuthentication(authentication);

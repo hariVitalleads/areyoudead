@@ -49,7 +49,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function register(body: RegisterRequest): Promise<UserResponse> {
-  return fetch(`${API_BASE}/auth/register`, {
+  return fetch(`${API_BASE}/user/register`, {
     method: 'POST',
     headers: headers(false),
     body: JSON.stringify(body),
@@ -57,7 +57,7 @@ export async function register(body: RegisterRequest): Promise<UserResponse> {
 }
 
 export async function login(body: LoginRequest): Promise<AuthResponse> {
-  return fetch(`${API_BASE}/auth/login`, {
+  return fetch(`${API_BASE}/user/login`, {
     method: 'POST',
     headers: headers(false),
     body: JSON.stringify(body),
@@ -85,7 +85,7 @@ export async function resetPassword(
 }
 
 export async function getAccount(): Promise<AccountDetailsResponse> {
-  return fetch(`${API_BASE}/login/me`, { headers: headers() }).then(
+  return fetch(`${API_BASE}/user/me`, { headers: headers() }).then(
     handleResponse<AccountDetailsResponse>
   );
 }
@@ -93,7 +93,7 @@ export async function getAccount(): Promise<AccountDetailsResponse> {
 export async function updateAccountDetails(
   body: UpdateDetailsRequest
 ): Promise<AccountDetailsResponse> {
-  return fetch(`${API_BASE}/login/details`, {
+  return fetch(`${API_BASE}/user/details`, {
     method: 'PUT',
     headers: headers(),
     body: JSON.stringify(body),

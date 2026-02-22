@@ -1,6 +1,7 @@
 package com.checkin.scheduler;
 
 import com.checkin.config.AppMetrics;
+import com.checkin.model.AlertChannelPreference;
 import com.checkin.model.User;
 import com.checkin.repository.EmergencyContactRepository;
 import com.checkin.repository.UserRepository;
@@ -80,24 +81,26 @@ public class InactiveUserScheduler {
 
                 int escalationLevel = computeEscalationLevel(user, now);
                 int contactsToNotify = Math.min(escalationLevel, contactCount);
-                int currentCount = user.getContactsAlertedCount() != null ? user.getContactsAlertedCount() : 0;
+                int currentCount = user.getContactsAlertedCount() != null ? user.getContactsAlertedCount().intValue() : 0;
 
                 if (contactsToNotify <= currentCount) continue;
 
                 user.setFirstAlertSentAt(user.getFirstAlertSentAt() != null ? user.getFirstAlertSentAt() : now);
-                user.setContactsAlertedCount(contactsToNotify);
+                user.setContactsAlertedCount((short) contactsToNotify);
                 userRepository.save(user);
 
                 log.info("Inactive user: ID={}, Email={}, LastLogin={}, escalation={}/{}",
                         user.getId(), user.getEmail(), user.getLastLoginDate(), contactsToNotify, contactCount);
 
-                if (smsEnabled) {
+                boolean sendSms = shouldSendSms(user);
+                boolean sendEmail = shouldSendEmail(user);
+                if (sendSms) {
                     String smsMessage = String.format(
                             "Alert: User %s (%s) has been inactive. Last activity: %s",
                             user.getEmail(), user.getId(), lastActivity);
                     emergencyContactService.sendSmsToContactsUpTo(user.getId(), smsMessage, contactsToNotify);
                 }
-                if (emailEnabled) {
+                if (sendEmail) {
                     emergencyContactService.sendInactiveUserAlertToContactsUpTo(user, actualInactiveMs, contactsToNotify);
                 }
             }
@@ -138,5 +141,17 @@ public class InactiveUserScheduler {
         long elapsedMs = now.toEpochMilli() - user.getFirstAlertSentAt().toEpochMilli();
         int steps = (int) (elapsedMs / escalationIntervalMs);
         return 1 + Math.max(0, steps);
+    }
+
+    private boolean shouldSendSms(User user) {
+        if (!smsEnabled) return false;
+        AlertChannelPreference pref = user.getAlertChannelPreference();
+        return pref == null || pref == AlertChannelPreference.BOTH || pref == AlertChannelPreference.SMS;
+    }
+
+    private boolean shouldSendEmail(User user) {
+        if (!emailEnabled) return false;
+        AlertChannelPreference pref = user.getAlertChannelPreference();
+        return pref == null || pref == AlertChannelPreference.BOTH || pref == AlertChannelPreference.EMAIL;
     }
 }

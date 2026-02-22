@@ -36,11 +36,16 @@ export interface AppUserDetailsResponse {
   lastLoginDate: string | null;
 }
 
+/** How to notify emergency contacts when user is inactive */
+export type AlertChannelPreference = 'EMAIL' | 'SMS' | 'BOTH';
+
 export interface AccountDetailsResponse {
   id: string;
   email: string;
   createdAt: string;
   lastLoginDate: string | null;
+  inactivityThresholdDays?: number | null;
+  alertChannelPreference?: AlertChannelPreference | null;
   registrationType?: string;
   firstName?: string;
   middleName?: string;
@@ -56,10 +61,17 @@ export interface AccountDetailsResponse {
 
 export interface UpdateAppUserRequest {
   email?: string;
+  inactivityThresholdDays?: number;
+  alertChannelPreference?: AlertChannelPreference;
+  firstName?: string;
+  lastName?: string;
+  mobileNumber?: string;
 }
 
 export interface UpdateDetailsRequest {
   email?: string;
+  inactivityThresholdDays?: number;
+  alertChannelPreference?: AlertChannelPreference;
   registrationType?: string;
   firstName?: string;
   middleName?: string;

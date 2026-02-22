@@ -19,4 +19,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	List<User> findByLastLoginDateBefore(Instant date);
 
 	Optional<User> findByEmailVerificationToken(String emailVerificationToken);
+
+	/** For admin audit: list all users, newest first. */
+	List<User> findAllByOrderByCreatedAtDesc();
 }

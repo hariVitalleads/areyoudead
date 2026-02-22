@@ -1,5 +1,6 @@
 package com.checkin.dto;
 
+import com.checkin.model.AlertChannelPreference;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -9,17 +10,32 @@ public class AppUserDetailsResponse {
 	private final Instant createdAt;
 	private final Instant lastLoginDate;
 	private final Integer inactivityThresholdDays;
+	private final AlertChannelPreference alertChannelPreference;
+	private final String firstName;
+	private final String lastName;
+	private final String mobileNumber;
 
 	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate) {
-		this(id, email, createdAt, lastLoginDate, null);
+		this(id, email, createdAt, lastLoginDate, null, null, null, null, null);
 	}
 
-	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate, Integer inactivityThresholdDays) {
+	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate,
+			Integer inactivityThresholdDays) {
+		this(id, email, createdAt, lastLoginDate, inactivityThresholdDays, null, null, null, null);
+	}
+
+	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate,
+			Integer inactivityThresholdDays, AlertChannelPreference alertChannelPreference,
+			String firstName, String lastName, String mobileNumber) {
 		this.id = id;
 		this.email = email;
 		this.createdAt = createdAt;
 		this.lastLoginDate = lastLoginDate;
 		this.inactivityThresholdDays = inactivityThresholdDays;
+		this.alertChannelPreference = alertChannelPreference;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.mobileNumber = mobileNumber;
 	}
 
 	public UUID getId() {
@@ -40,5 +56,21 @@ public class AppUserDetailsResponse {
 
 	public Integer getInactivityThresholdDays() {
 		return inactivityThresholdDays;
+	}
+
+	public AlertChannelPreference getAlertChannelPreference() {
+		return alertChannelPreference;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public String getMobileNumber() {
+		return mobileNumber;
 	}
 }

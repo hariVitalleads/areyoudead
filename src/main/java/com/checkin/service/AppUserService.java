@@ -1,13 +1,16 @@
 package com.checkin.service;
 
+import com.checkin.model.Registration;
 import com.checkin.model.User;
 import com.checkin.config.AppMetrics;
+import com.checkin.repository.RegistrationRepository;
 import com.checkin.repository.UserRepository;
 import com.checkin.audit.AuditAction;
 import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.UpdateAppUserRequest;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -18,11 +21,14 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AppUserService {
 	private final UserRepository userRepository;
+	private final RegistrationRepository registrationRepository;
 	private final AuditService auditService;
 	private final AppMetrics metrics;
 
-	public AppUserService(UserRepository userRepository, AuditService auditService, AppMetrics metrics) {
+	public AppUserService(UserRepository userRepository, RegistrationRepository registrationRepository,
+			AuditService auditService, AppMetrics metrics) {
 		this.userRepository = userRepository;
+		this.registrationRepository = registrationRepository;
 		this.auditService = auditService;
 		this.metrics = metrics;
 	}
@@ -30,7 +36,8 @@ public class AppUserService {
 	public AppUserDetailsResponse me(UUID userId) {
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "user not found"));
-		return toResponse(user);
+		Optional<Registration> reg = registrationRepository.findById(userId);
+		return toResponse(user, reg.orElse(null));
 	}
 
 	/**
@@ -69,20 +76,36 @@ public class AppUserService {
 			user.setEmail(normalized);
 		}
 		if (req.getInactivityThresholdDays() != null) {
-			user.setInactivityThresholdDays(req.getInactivityThresholdDays());
+			user.setInactivityThresholdDays((short) req.getInactivityThresholdDays().intValue());
+		}
+		if (req.getAlertChannelPreference() != null) {
+			user.setAlertChannelPreference(req.getAlertChannelPreference());
+		}
+
+		Registration reg = registrationRepository.findById(userId).orElse(null);
+		if (reg != null) {
+			if (req.getFirstName() != null) reg.setFirstName(req.getFirstName());
+			if (req.getLastName() != null) reg.setLastName(req.getLastName());
+			if (req.getMobileNumber() != null) reg.setMobileNumber(req.getMobileNumber());
 		}
 
 		try {
 			User saved = userRepository.save(user);
+			if (reg != null) registrationRepository.save(reg);
 			auditService.record(userId, AuditAction.UPDATE_DETAILS, "updated user/details");
-			return toResponse(saved);
+			return toResponse(saved, reg);
 		} catch (DataIntegrityViolationException ex) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered");
 		}
 	}
 
-	private static AppUserDetailsResponse toResponse(User user) {
-		return new AppUserDetailsResponse(user.getId(), user.getEmail(), user.getCreatedAt(), user.getLastLoginDate(), user.getInactivityThresholdDays());
+	private static AppUserDetailsResponse toResponse(User user, Registration reg) {
+		String fn = reg != null ? reg.getFirstName() : null;
+		String ln = reg != null ? reg.getLastName() : null;
+		String mob = reg != null ? reg.getMobileNumber() : null;
+		Integer threshold = user.getInactivityThresholdDays() != null ? user.getInactivityThresholdDays().intValue() : null;
+		return new AppUserDetailsResponse(user.getId(), user.getEmail(), user.getCreatedAt(), user.getLastLoginDate(),
+				threshold, user.getAlertChannelPreference(), fn, ln, mob);
 	}
 
 	private static String normalizeEmail(String email) {

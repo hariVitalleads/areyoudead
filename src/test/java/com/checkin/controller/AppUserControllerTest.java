@@ -1,6 +1,7 @@
 package com.checkin.controller;
 
 import com.checkin.dto.AppUserDetailsResponse;
+import com.checkin.dto.AuditEventResponse;
 import com.checkin.dto.AuthResponse;
 import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.LoginRequest;
@@ -12,8 +13,11 @@ import com.checkin.dto.UserResponse;
 import com.checkin.security.JwtService;
 import com.checkin.security.UserPrincipal;
 import com.checkin.service.AppUserService;
+import com.checkin.service.AuditService;
 import com.checkin.service.AuthService;
 import com.checkin.service.LoginService;
+
+import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +63,9 @@ class AppUserControllerTest {
 
         @MockitoBean
         private AppUserService appUserService;
+
+        @MockitoBean
+        private AuditService auditService;
 
         /** Required by JwtAuthenticationFilter when security auto-config is loaded. */
         @MockitoBean
@@ -192,6 +199,22 @@ class AppUserControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(userId.toString()))
                                 .andExpect(jsonPath("$.email").value("test@example.com"));
+        }
+
+        @Test
+        void auditEvents_Success() throws Exception {
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                                new UserPrincipal(userId, "test@example.com"), null, null);
+                List<AuditEventResponse> events = List.of(
+                                new AuditEventResponse(UUID.randomUUID(), "CHECK_IN", "manual check-in", Instant.now()));
+                when(auditService.listForUser(eq(userId))).thenReturn(events);
+
+                mockMvc.perform(get("/api/user/audit-events")
+                                .with(authentication(auth)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].action").value("CHECK_IN"))
+                                .andExpect(jsonPath("$[0].details").value("manual check-in"));
         }
 
         @Test

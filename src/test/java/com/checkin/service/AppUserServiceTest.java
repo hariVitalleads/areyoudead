@@ -5,6 +5,7 @@ import com.checkin.config.AppMetrics;
 import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.UpdateAppUserRequest;
 import com.checkin.model.User;
+import com.checkin.repository.RegistrationRepository;
 import com.checkin.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class AppUserServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private RegistrationRepository registrationRepository;
+
+    @Mock
     private AuditService auditService;
 
     @Mock
@@ -60,6 +64,7 @@ class AppUserServiceTest {
     void me_Success() {
         // Given
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
 
         // When
         AppUserDetailsResponse response = appUserService.me(userId);
@@ -91,6 +96,7 @@ class AppUserServiceTest {
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("newemail@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
@@ -110,6 +116,7 @@ class AppUserServiceTest {
         // Given
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
@@ -129,6 +136,7 @@ class AppUserServiceTest {
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("   ");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
@@ -147,6 +155,7 @@ class AppUserServiceTest {
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("test@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // When
@@ -159,7 +168,7 @@ class AppUserServiceTest {
 
     @Test
     void update_EmailAlreadyExists_ThrowsConflict() {
-        // Given
+        // Given: throws before reaching registrationRepository
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("existing@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -179,6 +188,7 @@ class AppUserServiceTest {
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("newemail@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("Duplicate"));
 
@@ -209,6 +219,7 @@ class AppUserServiceTest {
         UpdateAppUserRequest req = new UpdateAppUserRequest();
         req.setEmail("  NEWEMAIL@EXAMPLE.COM  ");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(registrationRepository.findById(userId)).thenReturn(Optional.empty());
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 

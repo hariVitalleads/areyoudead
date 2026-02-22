@@ -2,6 +2,8 @@ package com.checkin.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -47,13 +49,20 @@ public class User {
 	private Instant emailVerifiedAt;
 
 	@Column(name = "inactivity_threshold_days")
-	private Integer inactivityThresholdDays;
+	private Short inactivityThresholdDays;
 
 	@Column(name = "first_alert_sent_at")
 	private Instant firstAlertSentAt;
 
 	@Column(name = "contacts_alerted_count")
-	private Integer contactsAlertedCount;
+	private Short contactsAlertedCount;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "alert_channel_preference")
+	private AlertChannelPreference alertChannelPreference;
+
+	@Column(name = "super_user", nullable = false)
+	private boolean superUser = false;
 
 	protected User() {}
 
@@ -155,11 +164,11 @@ public class User {
 		this.emailVerifiedAt = emailVerifiedAt;
 	}
 
-	public Integer getInactivityThresholdDays() {
+	public Short getInactivityThresholdDays() {
 		return inactivityThresholdDays;
 	}
 
-	public void setInactivityThresholdDays(Integer inactivityThresholdDays) {
+	public void setInactivityThresholdDays(Short inactivityThresholdDays) {
 		this.inactivityThresholdDays = inactivityThresholdDays;
 	}
 
@@ -171,12 +180,28 @@ public class User {
 		this.firstAlertSentAt = firstAlertSentAt;
 	}
 
-	public Integer getContactsAlertedCount() {
+	public Short getContactsAlertedCount() {
 		return contactsAlertedCount;
 	}
 
-	public void setContactsAlertedCount(Integer contactsAlertedCount) {
+	public void setContactsAlertedCount(Short contactsAlertedCount) {
 		this.contactsAlertedCount = contactsAlertedCount;
+	}
+
+	public AlertChannelPreference getAlertChannelPreference() {
+		return alertChannelPreference;
+	}
+
+	public void setAlertChannelPreference(AlertChannelPreference alertChannelPreference) {
+		this.alertChannelPreference = alertChannelPreference;
+	}
+
+	public boolean isSuperUser() {
+		return superUser;
+	}
+
+	public void setSuperUser(boolean superUser) {
+		this.superUser = superUser;
 	}
 }
 
