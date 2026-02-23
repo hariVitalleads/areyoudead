@@ -1,0 +1,51 @@
+# Production-style compose: app container + Postgres (use RDS in AWS)
+# Usage: docker compose -f docker-compose.prod.yml up -d
+#
+# For AWS: Remove postgres service, set env vars to point to RDS.
+# Run Flyway migrations separately against RDS before starting the app.
+
+services:
+  app:
+    build: .
+    image: checkin-api:latest
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/areyoudead?options=-c%20TimeZone%3DUTC}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-areyoudead}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-areyoudead}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-areyoudead}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080/checkin}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/checkin/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: areyoudead
+      POSTGRES_USER: areyoudead
+      POSTGRES_PASSWORD: areyoudead
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U areyoudead -d areyoudead"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_prod:

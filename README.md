@@ -99,6 +99,24 @@ UPDATE app_user SET super_user = true WHERE email = 'admin@example.com';
 
 Super users log in via `POST /api/user/login` (same as regular users). The JWT includes a `super_user` claim that grants `ROLE_SUPER_USER`.
 
+## Container Deployment (AWS)
+
+See **[DEPLOYMENT-AWS.md](DEPLOYMENT-AWS.md)** for:
+
+- Building the Docker image
+- Pushing to Amazon ECR
+- Deploying to ECS/Fargate
+- RDS PostgreSQL setup
+- Amazon SES for email
+
+Quick local test:
+
+```bash
+docker build -t checkin-api:latest .
+echo "JWT_SECRET=your-32-byte-secret-minimum-required" > .env
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ## Flyway / Postgres
 
 **Reset Flyway and all tables** (clears migration history and data):

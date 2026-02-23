@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Build outputs
+build
+.gradle
+out
+
+# Logs and temp
+logs
+*.log
+tmp
+temp
+
+# Frontend (separate deployment; not needed for API container)
+frontend
+
+# Docs and misc (optional - comment out if you want them in image)
+ENHANCEMENTS.md
+ARCHITECTURE.md
+todoForAws.md
+DEPLOYMENT-AWS.md
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Test and dev
+*.md
+!README.md
