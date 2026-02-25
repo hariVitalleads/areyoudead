@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/emergency-contacts")
+@RequestMapping({"/api/emergency-contacts", "/checkin/api/emergency-contacts"})
 public class EmergencyContactController {
     private final EmergencyContactService emergencyContactService;
 

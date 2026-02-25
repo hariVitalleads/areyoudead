@@ -5,7 +5,7 @@ meta {
 }
 
 put {
-  url: http://localhost:8080/checkin/api/user/details
+  url: {{HOST}}/checkin/api/user/details
   body: json
   auth: bearer
 }
@@ -16,11 +16,11 @@ auth:bearer {
 
 body:json {
   {
-    "email": "updated@example.com",
+    "email": "user_9ebrkik@example.com",
     "firstName": "Jane",
     "lastName": "Doe",
     "mobileNumber": "+1234567890",
-    "inactivityThresholdDays": 7,
-    "alertChannelPreference": "BOTH"
+    "inactivityThresholdDays": 1,
+    "alertChannelPreference": "EMAIL"
   }
 }

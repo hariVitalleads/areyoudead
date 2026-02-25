@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 
 /**
@@ -62,6 +63,17 @@ public class GlobalExceptionHandler {
         log.error("Database error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(DB_ERROR_MESSAGE));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+        // Common when browsers/crawlers send GET to API endpoints that require POST
+        log.warn("No resource: {} {} – use POST for registration/login", ex.getHttpMethod(), ex.getResourcePath());
+        if ("GET".equalsIgnoreCase(ex.getHttpMethod().name()) && ex.getResourcePath() != null && ex.getResourcePath().contains("/api/")) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                    .body(new ErrorResponse("This endpoint requires POST. Use the correct HTTP method."));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Not found"));
     }
 
     @ExceptionHandler(IllegalStateException.class)

@@ -1,11 +1,22 @@
 # Production profile defaults. Override via environment variables.
 # Activate with: SPRING_PROFILES_ACTIVE=prod
+#
+# For AWS/Fargate: use at least 512 CPU units (0.5 vCPU) and 1GB memory to avoid
+# "Thread starvation or clock leap" from HikariCP during slow startup.
 
 spring:
+  datasource:
+    hikari:
+      connection-timeout: 60000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      # Reduce housekeeper frequency to tolerate slow startup on constrained CPU
+      housekeeping-period-ms: 120000
   jpa:
     show-sql: false
   flyway:
     clean-disabled: true
+    connect-retries: 10
 
 logging:
   level:

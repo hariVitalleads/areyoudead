@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/checkin/api/user/register
+  url: {{HOST}}/checkin/api/user/register
   body: json
   auth: none
+}
+
+headers {
+  Content-Type: application/json
 }
 
 body:json {

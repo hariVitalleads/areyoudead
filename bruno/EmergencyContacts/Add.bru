@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/checkin/api/emergency-contacts
+  url: {{HOST}}/checkin/api/emergency-contacts
   body: json
   auth: bearer
 }
@@ -16,7 +16,7 @@ auth:bearer {
 
 body:json {
   {
-    "mobileNumber": "45667865645342",
-    "email": "user_2nqeqe@example.com"
+    "mobileNumber": "234567",
+    "email": "asdf1234@example.com"
   }
 }

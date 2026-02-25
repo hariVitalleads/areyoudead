@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * (same as regular users); the flag super_user=true on their account grants access.
  */
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping({"/api/admin", "/checkin/api/admin"})
 public class AdminController {
 	private final AdminService adminService;
 	private final AuditService auditService;

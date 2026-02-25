@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping({"/api/user", "/checkin/api/user"})
 public class AppUserController {
 	private final AuthService authService;
 	private final LoginService loginService;
