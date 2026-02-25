@@ -1,8 +1,10 @@
-# Production-style compose: app container + Postgres (use RDS in AWS)
+# Production-style compose: app + frontend + Postgres (use RDS in AWS)
 # Usage: docker compose -f docker-compose.prod.yml up -d
 #
 # For AWS: Remove postgres service, set env vars to point to RDS.
 # Run Flyway migrations separately against RDS before starting the app.
+#
+# Frontend: http://localhost:3000  |  API: http://localhost:8080/checkin
 
 services:
   app:
@@ -11,6 +13,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/areyoudead?options=-c%20TimeZone%3DUTC}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-areyoudead}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-areyoudead}
@@ -27,7 +30,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/checkin/actuator/health"]
+      test: ["CMD", "curl", "-sf", "http://13.232.127.34:8080/checkin/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,6 +49,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://13.232.127.34:8080/checkin}
+    image: checkin-frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
 
 volumes:
   pgdata_prod:

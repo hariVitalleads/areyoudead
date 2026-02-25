@@ -85,7 +85,7 @@ Example task definition environment variables:
 | `MAIL_PASSWORD` | SES SMTP password | For email |
 | `MAIL_SMTP_AUTH` | `true` | For email |
 | `MAIL_SMTP_STARTTLS` | `true` | For email |
-| `SPRING_PROFILES_ACTIVE` | `prod` | Recommended |
+| `SPRING_PROFILES_ACTIVE` | `prod` | **Recommended** – enables HikariCP tuning for containers |
 
 ### Amazon SES (Email)
 
@@ -94,7 +94,16 @@ Example task definition environment variables:
 3. If in SES sandbox, verify recipient emails for testing.
 4. Set `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`.
 
-## 5. Load Balancer Health Check
+## 5. ECS Task Size & Health Checks
+
+**Thread starvation / app not starting:** If you see `HikariPool - Thread starvation or clock leap detected` and the app hangs, the task likely has too little CPU.
+
+- **Minimum recommended:** 512 CPU units (0.5 vCPU), 1024 MB memory
+- **Safer for cold start:** 1024 CPU units (1 vCPU), 2048 MB memory
+
+**ECS health check grace period:** Set to at least 120–180 seconds so the app can finish Flyway + startup before health checks run.
+
+## 6. Load Balancer Health Check
 
 - **Path**: `/checkin/actuator/health`
 - **Port**: 8080 (or mapped port)
@@ -103,15 +112,115 @@ Example task definition environment variables:
 - **Healthy threshold**: 2
 - **Unhealthy threshold**: 3
 
-## 6. Frontend Deployment (Optional)
+## 7. Frontend Deployment on AWS
 
-The frontend (Vite/React) is separate. For production:
+The frontend is a Vite/React SPA. Two deployment options:
 
-1. Build: `cd frontend && npm run build`
-2. Set `VITE_API_URL` to your API base (e.g. `https://api.example.com`) before build
-3. Deploy `dist/` to S3 + CloudFront, or another static host
+### Option A: S3 + CloudFront (recommended for static sites)
 
-## 7. Quick Reference: Required Env Vars
+Low cost, scalable, and well-suited for SPAs.
+
+**Step 1: Build the frontend**
+
+```bash
+cd frontend
+
+# Use your API’s public URL (must be reachable from the browser)
+VITE_API_URL=https://api.yourdomain.com/checkin npm run build
+
+# Or if API is on an IP for testing:
+# VITE_API_URL=http://13.232.127.34:8080/checkin npm run build
+```
+
+**Step 2: Create S3 bucket**
+
+```bash
+BUCKET_NAME=checkin-frontend  # Use a unique name
+REGION=us-east-1
+
+aws s3 mb s3://${BUCKET_NAME} --region ${REGION}
+
+# Block public access (CloudFront will use OAI)
+aws s3api put-public-access-block \
+  --bucket ${BUCKET_NAME} \
+  --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+```
+
+**Step 3: Upload build output**
+
+```bash
+aws s3 sync dist/ s3://${BUCKET_NAME} --delete
+```
+
+**Step 4: Create CloudFront distribution**
+
+1. CloudFront → Create distribution
+2. **Origin**: S3 bucket `s3://${BUCKET_NAME}`
+3. **Origin access**: Origin access control (recommended) or legacy OAI
+4. **Default root object**: `index.html`
+5. **Error pages**: Add custom error response for 403 and 404 → return `200` and `/index.html` (for SPA routing)
+6. Create distribution and note the CloudFront URL (e.g. `https://d1234.cloudfront.net`)
+
+**Step 5: Set S3 bucket policy (OAC/OAI)**
+
+After creating the distribution, apply the policy suggested by CloudFront so it can read from the bucket.
+
+**Step 6: (Optional) Custom domain + HTTPS**
+
+- Add an alternate domain name (e.g. `app.yourdomain.com`)
+- Request or import an ACM certificate in `us-east-1`
+- Update DNS to point to the CloudFront domain
+
+---
+
+### Option B: ECS (container, aligned with API)
+
+Use the same pattern as the API: build image, push to ECR, run on ECS.
+
+**Step 1: Build with correct API URL**
+
+```bash
+# Replace with your API public URL
+VITE_API_URL=https://api.yourdomain.com/checkin docker build -t checkin-frontend:latest -f frontend/Dockerfile frontend/
+
+# Or for IP-based testing:
+VITE_API_URL=http://13.232.127.34:8080/checkin docker build -t checkin-frontend:latest -f frontend/Dockerfile frontend/
+```
+
+**Step 2: Create ECR repository and push**
+
+```bash
+aws ecr create-repository --repository-name checkin-frontend
+
+ECR_URI=$(aws ecr describe-repositories --repository-names checkin-frontend --query 'repositories[0].repositoryUri' --output text)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(echo $ECR_URI | cut -d/ -f1)
+
+docker tag checkin-frontend:latest ${ECR_URI}:latest
+docker push ${ECR_URI}:latest
+```
+
+**Step 3: ECS task definition**
+
+- **Image**: `${ECR_URI}:latest`
+- **CPU**: 256
+- **Memory**: 512 MB
+- **Port mappings**: 80
+- **Health check**: `GET /` on port 80
+
+**Step 4: ECS service**
+
+- Create a service using the task definition
+- Use an ALB target group with path `/` on port 80
+- Set health check path to `/`
+- Register the service with the ALB
+
+**Step 5: ALB / DNS**
+
+- Create or reuse an ALB listener for port 80/443
+- Add a rule to forward traffic to the frontend target group
+- Point your domain (e.g. `app.yourdomain.com`) to the ALB
+
+## 8. Quick Reference: Required Env Vars
 
 ```bash
 # Minimum for production
@@ -129,3 +238,15 @@ MAIL_PASSWORD=<ses-smtp-password>
 MAIL_SMTP_AUTH=true
 MAIL_SMTP_STARTTLS=true
 ```
+
+## Troubleshooting
+
+**JavaMailSender bean not found / APPLICATION FAILED TO START:**
+- The app now includes a fallback no-op `JavaMailSender` when `spring.mail.host` is empty, so it should start even without email configured.
+- To enable real email: set `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (e.g. for Amazon SES).
+- If you see this error, ensure you're not excluding mail autoconfiguration and that `MAIL_HOST` is either unset (uses localhost) or a valid SMTP host.
+
+**App hangs after "Thread starvation or clock leap detected":**
+1. Increase ECS task CPU to at least 512 (0.5 vCPU), preferably 1024.
+2. Ensure `SPRING_PROFILES_ACTIVE=prod` is set (tunes HikariCP for containers).
+3. Extend ECS health check grace period to 120–180 seconds.
