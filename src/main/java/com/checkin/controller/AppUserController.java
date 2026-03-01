@@ -2,6 +2,7 @@ package com.checkin.controller;
 
 import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.AuditEventResponse;
+import com.checkin.dto.CheckInSummaryResponse;
 import com.checkin.dto.AuthResponse;
 import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.ForgotPasswordResponse;
@@ -95,6 +96,11 @@ public class AppUserController {
 	@GetMapping("/audit-events")
 	public List<AuditEventResponse> getAuditEvents(@CurrentUser UserPrincipal principal) {
 		return auditService.listForUser(principal.getUserId());
+	}
+
+	@GetMapping("/check-in-summary")
+	public CheckInSummaryResponse getCheckInSummary(@CurrentUser UserPrincipal principal) {
+		return auditService.getCheckInSummary(principal.getUserId());
 	}
 
 	@PostMapping("/check-in")

@@ -112,3 +112,17 @@ export interface EmergencyContactResponse {
   email: string;
   contactIndex: number;
 }
+
+export interface CheckInSummaryResponse {
+  totalCheckIns: number;
+  lastCheckInAt: string | null;
+  checkInsLast7Days: number;
+  checkInsLast30Days: number;
+}
+
+export interface AuditEventResponse {
+  id: string;
+  action: string;
+  details: string | null;
+  createdAt: string;
+}

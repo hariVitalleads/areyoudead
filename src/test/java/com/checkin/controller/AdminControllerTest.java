@@ -6,6 +6,7 @@ import com.checkin.dto.AdminUserSummaryResponse;
 import com.checkin.dto.AuditEventResponse;
 import com.checkin.dto.EmergencyContactResponse;
 import com.checkin.model.AlertChannelPreference;
+import com.checkin.security.JwtService;
 import com.checkin.service.AdminService;
 import com.checkin.service.AuditService;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,10 @@ class AdminControllerTest {
 
     @MockitoBean
     private AuditService auditService;
+
+    /** Required by JwtAuthenticationFilter when security auto-config is loaded. */
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void listUsers_SuperUser_Success() throws Exception {
@@ -93,12 +98,17 @@ class AdminControllerTest {
     @Test
     void getUserAuditDetail_UserNotFound_NotFound() throws Exception {
         UUID targetUserId = UUID.randomUUID();
+        UUID adminUserId = UUID.randomUUID();
         when(adminService.getUserAuditDetail(targetUserId))
                 .thenThrow(new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "user not found"));
 
+        var adminPrincipal = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                new com.checkin.security.UserPrincipal(adminUserId, "admin@example.com"),
+                null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SUPER_USER")));
+
         mockMvc.perform(get("/api/admin/users/{userId}", targetUserId)
-                        .with(user("admin@example.com").roles("SUPER_USER")))
+                        .with(authentication(adminPrincipal)))
                 .andExpect(status().isNotFound());
     }
 }

@@ -20,6 +20,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <Link to="/">Dashboard</Link>
             <Link to="/account">Account</Link>
             <Link to="/emergency-contacts">Contacts</Link>
+            <Link to="/activity">Check-in summary</Link>
             <span className="user">{user?.email}</span>
             <button onClick={handleLogout}>Sign out</button>
           </nav>

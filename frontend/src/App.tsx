@@ -9,6 +9,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
 import EmergencyContacts from './pages/EmergencyContacts';
+import Activity from './pages/Activity';
 
 export default function App() {
   return (
@@ -34,6 +35,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <EmergencyContacts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/activity"
+              element={
+                <ProtectedRoute>
+                  <Activity />
                 </ProtectedRoute>
               }
             />

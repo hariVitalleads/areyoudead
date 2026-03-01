@@ -1,17 +1,18 @@
-# Checkin — Architecture Diagram
+# Checkin — Architecture
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Framework | Spring Boot 3.4 (Java 17) |
-| Security | Spring Security + JWT (jjwt 0.12) + refresh tokens |
-| Persistence | Spring Data JPA + Flyway + PostgreSQL |
-| Scheduling | Spring Scheduler |
-| Email | Spring Mail + MailHog (dev) / SMTP (prod) |
-| Rate limiting | Bucket4j |
-| Build | Gradle |
-| Infra | Docker Compose |
+|-------|-------------|
+| **Backend** | Spring Boot 3.4 (Java 17) |
+| **Frontend** | Vite + React 19 + TypeScript |
+| **Security** | Spring Security + JWT (jjwt 0.12) + refresh tokens |
+| **Persistence** | Spring Data JPA + Flyway + PostgreSQL |
+| **Scheduling** | Spring Scheduler |
+| **Email** | Spring Mail + MailHog (dev) / SES SMTP (prod) |
+| **Rate limiting** | Bucket4j |
+| **Build** | Gradle (backend) · npm (frontend) |
+| **Infra** | Docker Compose · AWS (ECS, ECR, RDS, S3, CloudFront) |
 
 **Context path:** `/checkin` — all APIs are under `http://host:port/checkin/api/...`
 
@@ -35,12 +36,14 @@ flowchart TD
         UC["AppUserController\n/api/user · canonical\n POST /register, /login, /refresh\n GET /verify-email/{token}\n POST /forgot-password\n POST /reset-password\n GET /me · PUT /details\n POST /check-in"]
         LC["LoginController\n/api/login · alias\n POST /login"]
         EC["EmergencyContactController\n/api/emergency-contacts\n GET / POST / PUT/{id} / DELETE/{id}\n GET /verify/{token}\n GET /opt-out/{token}"]
+        AC["AdminController\n/api/admin · super_user only\n GET /users · GET /users/{id}"]
     end
 
     subgraph Services["Service Layer"]
         AuthSvc["AuthService\n(register, login, refresh,\nverifyUserByToken,\nsend verification email)"]
         LoginSvc["LoginService\n(forgotPassword, resetPassword)"]
         AppUserSvc["AppUserService\n(me, update, checkIn)"]
+        AdminSvc["AdminService\n(listUsers, getUserAuditDetail)"]
         EmgSvc["EmergencyContactService\n(CRUD, verifyByToken, optOutByToken,\nsendSmsToContactsUpTo,\nsendInactiveUserAlertToContactsUpTo)"]
         AuditSvc["AuditService"]
     end
@@ -78,6 +81,8 @@ flowchart TD
     UC --> LoginSvc
     UC --> AppUserSvc
     LC --> AuthSvc
+    AC --> AdminSvc
+    AC --> AuditSvc
     EC --> EmgSvc
 
     AuthSvc --> AuditSvc
@@ -87,6 +92,9 @@ flowchart TD
     AuthSvc --> RegR
     AuthSvc --> RefreshR
     AppUserSvc --> UR
+    AdminSvc --> UR
+    AdminSvc --> AuditR
+    AdminSvc --> ECR
     LoginSvc --> UR
     LoginSvc --> RegR
     EmgSvc --> ECR
@@ -111,6 +119,82 @@ flowchart TD
 
 ---
 
+## Deployment Architecture (AWS)
+
+```mermaid
+flowchart LR
+    subgraph Client["Client"]
+        Browser["Browser"]
+    end
+
+    subgraph Frontend["Frontend (SPA)"]
+        direction TB
+        CF["CloudFront\n(optional)"]
+        S3["S3\nstatic dist/"]
+        ECS_F["ECS + nginx\n(optional)"]
+        CF --> S3
+    end
+
+    subgraph API["API"]
+        ALB["ALB"]
+        ECS_A["ECS / EC2\nSpring Boot :8080"]
+        ALB --> ECS_A
+    end
+
+    subgraph Data["Data"]
+        RDS[("RDS\nPostgreSQL")]
+    end
+
+    subgraph Email["Email"]
+        SES["Amazon SES"]
+    end
+
+    Browser --> CF
+    Browser --> ECS_F
+    Browser --> ALB
+    ECS_A --> RDS
+    ECS_A --> SES
+```
+
+**Frontend deployment options:**
+- **S3 + CloudFront** — Build `dist/`, sync to S3, serve via CloudFront (recommended for static SPAs)
+- **ECS** — Docker image (nginx + built `dist/`), run on Fargate
+
+**API:** ECS Fargate or EC2, behind ALB, connects to RDS and SES.
+
+See [DEPLOYMENT-AWS.md](DEPLOYMENT-AWS.md) for detailed steps.
+
+---
+
+## Frontend
+
+| Item | Description |
+|------|-------------|
+| **Stack** | Vite 7, React 19, React Router |
+| **Location** | `frontend/` |
+| **Build** | `npm run build` → `dist/` |
+| **API base** | `VITE_API_URL` (baked at build) — e.g. `http://localhost:8080/checkin` |
+| **Dev** | `npm run dev` — Vite proxy `/api` → `http://localhost:8080/checkin/api` |
+| **Prod serve** | nginx or `npx serve -s dist` (SPA fallback) |
+
+---
+
+## Docker Compose (Local / Prod)
+
+| Service | Port | Description |
+|---------|------|--------------|
+| `app` | 8080 | Spring Boot API |
+| `frontend` | 3000 | nginx serving built SPA |
+| `postgres` | 5432 | PostgreSQL 16 |
+| `mail` (dev) | 1025, 8025 | MailHog SMTP + Web UI |
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+# API: http://localhost:8080/checkin  |  Frontend: http://localhost:3000
+```
+
+---
+
 ## Package Structure
 
 ```
@@ -131,9 +215,10 @@ com.checkin
 │   ├── UserVerificationProperties  ← app.user (email verification)
 │   └── WebMvcConfig                ← UserPrincipalArgumentResolver
 ├── controller/
-│   ├── AppUserController           ← /api/user/* (canonical)
-│   ├── EmergencyContactController  ← /api/emergency-contacts/*
-│   └── LoginController             ← /api/login (alias for login only)
+│   ├── AdminController              ← /api/admin/* (super_user only)
+│   ├── AppUserController            ← /api/user/* (canonical)
+│   ├── EmergencyContactController   ← /api/emergency-contacts/*
+│   └── LoginController              ← /api/login (alias for login only)
 ├── dto/                            ← Request/Response POJOs
 ├── exception/
 │   └── GlobalExceptionHandler
@@ -155,6 +240,7 @@ com.checkin
 │   ├── UserPrincipal
 │   └── UserPrincipalArgumentResolver
 └── service/
+    ├── AdminService
     ├── AppUserService
     ├── AuditService
     ├── AuthService
@@ -168,7 +254,9 @@ com.checkin
 
 ---
 
-## API Overview (canonical: `/api/user`)
+## API Overview
+
+### User API (canonical: `/api/user`)
 
 | Endpoint | Auth | Description |
 |----------|------|-------------|
@@ -182,6 +270,24 @@ com.checkin
 | `PUT /api/user/details` | Yes | Update email, inactivityThresholdDays |
 | `POST /api/user/check-in` | Yes | Manual check-in; optional snoozeDays (1–90) |
 | `POST /api/login/login` | No | Alias for /api/user/login |
+
+### Emergency Contacts (`/api/emergency-contacts`)
+
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `GET /api/emergency-contacts` | Yes | List user's contacts |
+| `POST /api/emergency-contacts` | Yes | Add contact; sends verification email |
+| `PUT /api/emergency-contacts/{id}` | Yes | Update contact |
+| `DELETE /api/emergency-contacts/{id}` | Yes | Delete contact |
+| `GET /api/emergency-contacts/verify/{token}` | No | Verify contact email (from link) |
+| `GET /api/emergency-contacts/opt-out/{token}` | No | Opt out of alerts (from link) |
+
+### Admin (`/api/admin` — requires `ROLE_SUPER_USER`)
+
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `GET /api/admin/users` | Super user | List all users (summary) |
+| `GET /api/admin/users/{userId}` | Super user | Full audit view (user, events, contacts) |
 
 ---
 

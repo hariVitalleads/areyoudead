@@ -10,6 +10,8 @@ import type {
   UpdateDetailsRequest,
   EmergencyContactRequest,
   EmergencyContactResponse,
+  CheckInSummaryResponse,
+  AuditEventResponse,
 } from './types';
 
 const API_BASE =
@@ -138,4 +140,24 @@ export async function deleteEmergencyContact(id: string): Promise<void> {
     const text = await res.text();
     throw new Error(text || res.statusText);
   }
+}
+
+export async function getCheckInSummary(): Promise<CheckInSummaryResponse> {
+  return fetch(`${API_BASE}/user/check-in-summary`, { headers: headers() }).then(
+    handleResponse<CheckInSummaryResponse>
+  );
+}
+
+export async function getAuditEvents(): Promise<AuditEventResponse[]> {
+  return fetch(`${API_BASE}/user/audit-events`, { headers: headers() }).then(
+    handleResponse<AuditEventResponse[]>
+  );
+}
+
+export async function checkIn(snoozeDays?: number): Promise<MessageResponse> {
+  return fetch(`${API_BASE}/user/check-in`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(snoozeDays != null ? { snoozeDays } : {}),
+  }).then(handleResponse<MessageResponse>);
 }

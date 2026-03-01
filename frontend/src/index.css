@@ -113,7 +113,25 @@ a:hover {
 }
 
 .card .welcome {
+  margin-bottom: 1rem;
+}
+
+.dashboard-summary {
   margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.dashboard-summary .summary-headline {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.dashboard-summary .summary-link {
+  font-size: 0.9rem;
 }
 
 .card .nav-links {
@@ -374,4 +392,106 @@ form button.danger:hover {
 .contact-list li form input {
   margin: 0;
   max-width: 180px;
+}
+
+/* Activity / Check-in summary */
+.activity-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.card button.primary {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.card button.text-link {
+  font-size: 0.9rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: normal;
+  margin-left: 0.5rem;
+}
+
+.card button.text-link:hover {
+  text-decoration: underline;
+}
+
+.card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.activity-action {
+  flex: 1;
+  min-width: 150px;
+}
+
+.activity-details {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.activity-date {
+  color: var(--muted);
+  font-size: 0.85rem;
 }

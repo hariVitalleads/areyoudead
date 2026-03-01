@@ -210,6 +210,24 @@ components:
         createdAt:
           type: string
           format: date-time
+    CheckInSummaryResponse:
+      type: object
+      description: Check-in activity summary from audit_events
+      properties:
+        totalCheckIns:
+          type: integer
+          description: Total number of check-ins
+        lastCheckInAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last check-in
+        checkInsLast7Days:
+          type: integer
+          description: Check-ins in the last 7 days
+        checkInsLast30Days:
+          type: integer
+          description: Check-ins in the last 30 days
     UpdateDetailsRequest:
       type: object
       properties:
@@ -511,6 +529,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AuditEventResponse"
+  /api/user/check-in-summary:
+    get:
+      tags:
+        - User
+      summary: Get check-in summary (totals, last 7/30 days, last check-in)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Check-in summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInSummaryResponse"
   /api/user/verify-email/{token}:
     get:
       tags:
