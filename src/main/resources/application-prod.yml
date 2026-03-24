@@ -4,6 +4,18 @@
 # For AWS/Fargate: use at least 512 CPU units (0.5 vCPU) and 1GB memory to avoid
 # "Thread starvation or clock leap" from HikariCP during slow startup.
 
+server:
+  # Bind to all interfaces so the app is reachable from outside the container
+  address: 0.0.0.0
+  # When behind a reverse proxy (nginx, ALB), honor X-Forwarded-* headers
+  forward-headers-strategy: native
+
+app:
+  emergency-contacts:
+    email:
+      # Required for verification/opt-out links in emails. Set APP_BASE_URL in production.
+      app-base-url: ${APP_BASE_URL:https://feeling-okay.com}
+
 spring:
   datasource:
     hikari:
@@ -26,8 +38,11 @@ logging:
     com.checkin.service.EmergencyContactService: INFO
 
 management:
+  # Health check URL: {context-path}/actuator/health → /checkin/actuator/health
+  # Proxy must forward the full path (do not strip /checkin)
   endpoints:
     web:
+      base-path: /actuator
       exposure:
         include: health, info, metrics
   endpoint:

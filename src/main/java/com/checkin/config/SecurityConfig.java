@@ -42,6 +42,8 @@ public class SecurityConfig {
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
+						// Actuator health for load balancer / container probes (no auth required)
+						.requestMatchers("/actuator/**", "/checkin/actuator/**").permitAll()
 						.requestMatchers(HttpMethod.POST,
 								"/api/user/register",
 								"/api/user/login",
@@ -62,7 +64,6 @@ public class SecurityConfig {
 								"/checkin/api/user/verify-email/**",
 								"/checkin/api/emergency-contacts/verify/**", "/checkin/api/emergency-contacts/opt-out/**")
 						.permitAll()
-						.requestMatchers("/actuator/**", "/checkin/actuator/**").permitAll()
 						.requestMatchers("/error", "/checkin/error").permitAll()
 						.requestMatchers("/api/admin/**", "/checkin/api/admin/**").hasRole("SUPER_USER")
 						.anyRequest().authenticated())

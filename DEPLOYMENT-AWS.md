@@ -129,7 +129,7 @@ cd frontend
 VITE_API_URL=https://api.yourdomain.com/checkin npm run build
 
 # Or if API is on an IP for testing:
-# VITE_API_URL=http://13.232.127.34:8080/checkin npm run build
+# VITE_API_URL=https://feeling-okay.com/checkin npm run build
 ```
 
 **Step 2: Create S3 bucket**
@@ -184,7 +184,7 @@ Use the same pattern as the API: build image, push to ECR, run on ECS.
 VITE_API_URL=https://api.yourdomain.com/checkin docker build -t checkin-frontend:latest -f frontend/Dockerfile frontend/
 
 # Or for IP-based testing:
-VITE_API_URL=http://13.232.127.34:8080/checkin docker build -t checkin-frontend:latest -f frontend/Dockerfile frontend/
+VITE_API_URL=https://feeling-okay.com/checkin docker build -t checkin-frontend:latest -f frontend/Dockerfile frontend/
 ```
 
 **Step 2: Create ECR repository and push**

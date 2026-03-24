@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 
 # VITE_API_URL is baked into the build (API base URL as seen by the browser)
-ARG VITE_API_URL=http://13.232.127.34:8080/checkin
+ARG VITE_API_URL=https://feeling-okay.com/checkin
 ENV VITE_API_URL=${VITE_API_URL}
 
 RUN npm run build

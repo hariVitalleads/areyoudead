@@ -67,11 +67,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
-        // Common when browsers/crawlers send GET to API endpoints that require POST
-        log.warn("No resource: {} {} – use POST for registration/login", ex.getHttpMethod(), ex.getResourcePath());
-        if ("GET".equalsIgnoreCase(ex.getHttpMethod().name()) && ex.getResourcePath() != null && ex.getResourcePath().contains("/api/")) {
+        String path = ex.getResourcePath() != null ? ex.getResourcePath() : "";
+        // Actuator paths should not trigger the "use POST" message – health checks use GET
+        if (path.contains("actuator")) {
+            log.debug("No actuator resource: {} {}", ex.getHttpMethod(), path);
+        } else if ("GET".equalsIgnoreCase(ex.getHttpMethod().name()) && path.contains("/api/")) {
+            log.warn("No resource: {} {} – use POST for registration/login", ex.getHttpMethod(), path);
             return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                     .body(new ErrorResponse("This endpoint requires POST. Use the correct HTTP method."));
+        } else {
+            log.warn("No resource: {} {}", ex.getHttpMethod(), path);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Not found"));
     }
