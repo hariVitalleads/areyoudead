@@ -29,6 +29,13 @@ public class UpdateAppUserRequest {
 	@Pattern(regexp = "^[0-9+\\-()\\s]*$", message = "mobileNumber has invalid characters")
 	private String mobileNumber;
 
+	/** Optional. FCM token. Pass to register or update the device for push notifications. Empty string clears. */
+	@Size(max = 512)
+	private String fcmToken;
+
+	/** Optional. Daily reminder times in HH:mm (UTC), e.g. ["09:00", "18:00"]. Max 5 times. */
+	private java.util.List<String> notificationTimes;
+
 	public String getEmail() {
 		return email;
 	}
@@ -75,5 +82,21 @@ public class UpdateAppUserRequest {
 
 	public void setMobileNumber(String mobileNumber) {
 		this.mobileNumber = mobileNumber;
+	}
+
+	public String getFcmToken() {
+		return fcmToken;
+	}
+
+	public void setFcmToken(String fcmToken) {
+		this.fcmToken = fcmToken;
+	}
+
+	public java.util.List<String> getNotificationTimes() {
+		return notificationTimes;
+	}
+
+	public void setNotificationTimes(java.util.List<String> notificationTimes) {
+		this.notificationTimes = notificationTimes;
 	}
 }

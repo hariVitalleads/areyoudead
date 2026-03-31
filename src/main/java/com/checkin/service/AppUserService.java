@@ -9,6 +9,14 @@ import com.checkin.audit.AuditAction;
 import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.UpdateAppUserRequest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -88,6 +96,17 @@ public class AppUserService {
 			if (req.getLastName() != null) reg.setLastName(req.getLastName());
 			if (req.getMobileNumber() != null) reg.setMobileNumber(req.getMobileNumber());
 		}
+		if (req.getFcmToken() != null) {
+			user.setFcmToken(req.getFcmToken().isBlank() ? null : req.getFcmToken().trim());
+		}
+		if (req.getNotificationTimes() != null) {
+			if (req.getNotificationTimes().isEmpty()) {
+				user.setNotificationTimesJson(null);
+			} else {
+				validateNotificationTimes(req.getNotificationTimes());
+				user.setNotificationTimesJson(serializeNotificationTimes(req.getNotificationTimes()));
+			}
+		}
 
 		try {
 			User saved = userRepository.save(user);
@@ -104,8 +123,39 @@ public class AppUserService {
 		String ln = reg != null ? reg.getLastName() : null;
 		String mob = reg != null ? reg.getMobileNumber() : null;
 		Integer threshold = user.getInactivityThresholdDays() != null ? user.getInactivityThresholdDays().intValue() : null;
+		List<String> notificationTimes = parseNotificationTimes(user.getNotificationTimesJson());
 		return new AppUserDetailsResponse(user.getId(), user.getEmail(), user.getCreatedAt(), user.getLastLoginDate(),
-				threshold, user.getAlertChannelPreference(), fn, ln, mob);
+				threshold, user.getAlertChannelPreference(), fn, ln, mob, user.getFcmToken(), notificationTimes);
+	}
+
+	private static void validateNotificationTimes(List<String> times) {
+		if (times == null) return;
+		if (times.size() > 5) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "notificationTimes: max 5 times allowed");
+		}
+		for (String t : times) {
+			if (t == null || !t.matches("^([01]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "notificationTimes: invalid format, use HH:mm");
+			}
+		}
+	}
+
+	private static String serializeNotificationTimes(List<String> times) {
+		if (times == null || times.isEmpty()) return null;
+		try {
+			return new ObjectMapper().writeValueAsString(times);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static List<String> parseNotificationTimes(String json) {
+		if (json == null || json.isBlank()) return null;
+		try {
+			return new ObjectMapper().readValue(json, new TypeReference<>() {});
+		} catch (JsonProcessingException e) {
+			return null;
+		}
 	}
 
 	private static String normalizeEmail(String email) {

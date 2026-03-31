@@ -41,6 +41,8 @@ dependencies {
 	testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
 	testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
+	implementation 'com.google.firebase:firebase-admin:9.2.0'
+
 	implementation platform('io.jsonwebtoken:jjwt-bom:0.12.7')
 	implementation 'io.jsonwebtoken:jjwt-api'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl'

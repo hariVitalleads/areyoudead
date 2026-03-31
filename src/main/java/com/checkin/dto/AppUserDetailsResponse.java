@@ -2,6 +2,7 @@ package com.checkin.dto;
 
 import com.checkin.model.AlertChannelPreference;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class AppUserDetailsResponse {
@@ -14,19 +15,27 @@ public class AppUserDetailsResponse {
 	private final String firstName;
 	private final String lastName;
 	private final String mobileNumber;
+	private final String fcmToken;
+	private final List<String> notificationTimes;
 
 	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate) {
-		this(id, email, createdAt, lastLoginDate, null, null, null, null, null);
+		this(id, email, createdAt, lastLoginDate, null, null, null, null, null, null, null);
 	}
 
 	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate,
 			Integer inactivityThresholdDays) {
-		this(id, email, createdAt, lastLoginDate, inactivityThresholdDays, null, null, null, null);
+		this(id, email, createdAt, lastLoginDate, inactivityThresholdDays, null, null, null, null, null, null);
 	}
 
 	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate,
 			Integer inactivityThresholdDays, AlertChannelPreference alertChannelPreference,
 			String firstName, String lastName, String mobileNumber) {
+		this(id, email, createdAt, lastLoginDate, inactivityThresholdDays, alertChannelPreference, firstName, lastName, mobileNumber, null, null);
+	}
+
+	public AppUserDetailsResponse(UUID id, String email, Instant createdAt, Instant lastLoginDate,
+			Integer inactivityThresholdDays, AlertChannelPreference alertChannelPreference,
+			String firstName, String lastName, String mobileNumber, String fcmToken, List<String> notificationTimes) {
 		this.id = id;
 		this.email = email;
 		this.createdAt = createdAt;
@@ -36,6 +45,8 @@ public class AppUserDetailsResponse {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.mobileNumber = mobileNumber;
+		this.fcmToken = fcmToken;
+		this.notificationTimes = notificationTimes != null ? List.copyOf(notificationTimes) : null;
 	}
 
 	public UUID getId() {
@@ -72,5 +83,13 @@ public class AppUserDetailsResponse {
 
 	public String getMobileNumber() {
 		return mobileNumber;
+	}
+
+	public String getFcmToken() {
+		return fcmToken;
+	}
+
+	public List<String> getNotificationTimes() {
+		return notificationTimes;
 	}
 }

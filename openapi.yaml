@@ -60,6 +60,17 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        fcmToken:
+          type: string
+          maxLength: 512
+          description: Optional. FCM token for push notifications. Can also be set later via PUT /details.
+        notificationTimes:
+          type: array
+          items:
+            type: string
+            pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          maxItems: 5
+          description: Optional. Daily reminder times in HH:mm (UTC), e.g. ["09:00", "18:00"].
     LoginRequest:
       type: object
       required:
@@ -122,6 +133,16 @@ components:
           type: string
         mobileNumber:
           type: string
+        fcmToken:
+          type: string
+          maxLength: 512
+          description: FCM token for push notifications. Null if not set.
+        notificationTimes:
+          type: array
+          items:
+            type: string
+            pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Daily reminder times in HH:mm (UTC), e.g. ["09:00", "18:00"]. Null if not set.
     UpdateAppUserRequest:
       type: object
       properties:
@@ -148,6 +169,17 @@ components:
           pattern: '^[0-9+\-()\s]+$'
           minLength: 6
           maxLength: 20
+        fcmToken:
+          type: string
+          maxLength: 512
+          description: Optional. FCM token. Pass to register or update device for push notifications. Empty string clears.
+        notificationTimes:
+          type: array
+          items:
+            type: string
+            pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          maxItems: 5
+          description: Optional. Daily reminder times in HH:mm (UTC), e.g. ["09:00", "18:00"].
     CheckInRequest:
       type: object
       properties:
@@ -164,6 +196,15 @@ components:
         email:
           type: string
           format: email
+    ResendVerificationEmailRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email used at registration (unverified accounts only).
     ForgotPasswordResponse:
       type: object
       properties:
@@ -482,6 +523,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ForgotPasswordResponse"
+  /api/user/resend-verification-email:
+    post:
+      tags:
+        - User
+      summary: Resend registration verification email
+      description: >
+        Public endpoint. Response is always the same whether the email exists, is already verified,
+        or verification is disabled, to avoid account enumeration. Rate-limited like other auth endpoints.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationEmailRequest"
+      responses:
+        "202":
+          description: Request accepted (generic message)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid email format
   /api/user/reset-password:
     post:
       tags:

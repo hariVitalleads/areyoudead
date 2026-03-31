@@ -56,6 +56,13 @@ public class RegisterRequest {
 	@Size(min = 1, max = 200)
 	private String addressLine2;
 
+	/** Optional. FCM token for push notifications. Can also be set later via PUT /details. */
+	@Size(max = 512)
+	private String fcmToken;
+
+	/** Optional. Daily reminder times in HH:mm (UTC), e.g. ["09:00", "18:00"]. */
+	private java.util.List<String> notificationTimes;
+
 	public String getRegistrationType() {
 		return registrationType;
 	}
@@ -126,5 +133,21 @@ public class RegisterRequest {
 
 	public void setAddressLine2(String addressLine2) {
 		this.addressLine2 = addressLine2;
+	}
+
+	public String getFcmToken() {
+		return fcmToken;
+	}
+
+	public void setFcmToken(String fcmToken) {
+		this.fcmToken = fcmToken;
+	}
+
+	public java.util.List<String> getNotificationTimes() {
+		return notificationTimes;
+	}
+
+	public void setNotificationTimes(java.util.List<String> notificationTimes) {
+		this.notificationTimes = notificationTimes;
 	}
 }

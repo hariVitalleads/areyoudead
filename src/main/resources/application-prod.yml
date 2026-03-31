@@ -1,45 +1,97 @@
-# Production profile defaults. Override via environment variables.
-# Activate with: SPRING_PROFILES_ACTIVE=prod
+# Production profile. Activate with: SPRING_PROFILES_ACTIVE=prod
+# Base settings still load from application.yml; this file overrides and documents prod knobs.
 #
 # For AWS/Fargate: use at least 512 CPU units (0.5 vCPU) and 1GB memory to avoid
 # "Thread starvation or clock leap" from HikariCP during slow startup.
 
 server:
+  port: 8080
+  servlet:
+    context-path: /checkin
   # Bind to all interfaces so the app is reachable from outside the container
   address: 0.0.0.0
   # When behind a reverse proxy (nginx, ALB), honor X-Forwarded-* headers
   forward-headers-strategy: native
 
 app:
+  rate-limit:
+    auth-requests-per-window: ${RATE_LIMIT_AUTH_REQUESTS:10}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+  scheduler:
+    inactive-ms: ${APP_SCHEDULER_INACTIVE_MS:86400000}
+    escalation-interval-hours: ${APP_SCHEDULER_ESCALATION_INTERVAL_HOURS:24}
+    emergency-contacts:
+      sms:
+        enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_SMS_ENABLED:true}
+      email:
+        enabled: ${APP_SCHEDULER_EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
+  user:
+    require-email-verification: ${USER_REQUIRE_EMAIL_VERIFICATION:true}
+    verification-token-ttl-seconds: ${USER_VERIFICATION_TTL:86400}
+  fcm:
+    enabled: ${FCM_ENABLED:false}
+    credentials-path: ${FCM_CREDENTIALS_PATH:}
+    credentials-json-base64: ${FCM_CREDENTIALS_JSON_BASE64:}
   emergency-contacts:
+    max-count: ${EMERGENCY_CONTACTS_MAX_COUNT:3}
+    require-verification: ${EMERGENCY_CONTACTS_REQUIRE_VERIFICATION:true}
+    verification-token-ttl-seconds: ${EMERGENCY_CONTACTS_VERIFICATION_TTL:86400}
+    sms:
+      enabled: ${EMERGENCY_CONTACTS_SMS_ENABLED:true}
     email:
-      # Required for verification/opt-out links in emails. Set APP_BASE_URL in production.
-      app-base-url: ${APP_BASE_URL:https://feeling-okay.com}
+      enabled: ${EMERGENCY_CONTACTS_EMAIL_ENABLED:true}
+      from-address: ${EMERGENCY_CONTACTS_EMAIL_FROM:noreply@checkin.com}
+      subject-prefix: ${EMERGENCY_CONTACTS_EMAIL_SUBJECT_PREFIX:[Checkin]}
+      # Public API base for verification / opt-out links (include /checkin), e.g. https://api.example.com/checkin
+      app-base-url: ${APP_BASE_URL:}
 
 spring:
   datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/areyoudead?options=-c%20TimeZone%3DUTC}
+    username: ${SPRING_DATASOURCE_USERNAME:areyoudead}
+    password: ${SPRING_DATASOURCE_PASSWORD:areyoudead}
     hikari:
       connection-timeout: 60000
       maximum-pool-size: 5
       minimum-idle: 1
-      # Reduce housekeeper frequency to tolerate slow startup on constrained CPU
       housekeeping-period-ms: 120000
   jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
     show-sql: false
   flyway:
+    enabled: true
     clean-disabled: true
     connect-retries: 10
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
 
 logging:
   level:
     root: INFO
     com.checkin: INFO
-    com.checkin.service.InactiveUserEmailTemplate: INFO
-    com.checkin.service.EmergencyContactService: INFO
+    com.checkin.service.InactiveUserEmailTemplate: ${LOG_LEVEL_EMAIL_TEMPLATE:INFO}
+    com.checkin.service.EmergencyContactService: ${LOG_LEVEL_EMERGENCY_CONTACT:INFO}
 
 management:
   # Health check URL: {context-path}/actuator/health → /checkin/actuator/health
-  # Proxy must forward the full path (do not strip /checkin)
   endpoints:
     web:
       base-path: /actuator
@@ -47,4 +99,19 @@ management:
         include: health, info, metrics
   endpoint:
     health:
+      probes:
+        enabled: true
       show-details: when-authorized
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: true
+
+security:
+  jwt:
+    # Override JWT_SECRET in production; default matches application.yml for local prod runs only
+    secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-123456}
+    issuer: ${JWT_ISSUER:areyoudead}
+    access-token-ttl-seconds: ${JWT_TTL_SECONDS:300}
+    refresh-token-ttl-seconds: ${JWT_REFRESH_TTL_SECONDS:86400}

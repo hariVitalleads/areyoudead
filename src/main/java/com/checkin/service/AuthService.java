@@ -17,7 +17,10 @@ import com.checkin.repository.UserRepository;
 import com.checkin.security.JwtService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -28,6 +31,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -92,6 +96,13 @@ public class AuthService {
 			user.setEmailVerificationToken(token);
 			user.setEmailVerificationTokenExpiresAt(
 					Instant.now().plusSeconds(userVerificationProperties.getVerificationTokenTtlSeconds()));
+		}
+		if (req.getFcmToken() != null && !req.getFcmToken().isBlank()) {
+			user.setFcmToken(req.getFcmToken().trim());
+		}
+		if (req.getNotificationTimes() != null && !req.getNotificationTimes().isEmpty()) {
+			validateNotificationTimes(req.getNotificationTimes());
+			user.setNotificationTimesJson(serializeNotificationTimes(req.getNotificationTimes()));
 		}
 
 		try {
@@ -181,6 +192,33 @@ public class AuthService {
 		return new AuthResponse(newAccessToken, newRefreshValue, new UserResponse(user.getId(), user.getEmail(), user.getCreatedAt()));
 	}
 
+	/**
+	 * Re-sends the registration verification email for an unverified account.
+	 * Always succeeds from the caller's perspective (same response) to avoid email enumeration.
+	 * Issues a new token and expiry when a matching unverified user exists and verification is required.
+	 */
+	@Transactional
+	public void resendVerificationEmail(String email) {
+		String normalized = normalizeEmail(email);
+		if (normalized == null || normalized.isBlank()) {
+			return;
+		}
+		if (!userVerificationProperties.isRequireEmailVerification()) {
+			return;
+		}
+		User user = userRepository.findByEmail(normalized).orElse(null);
+		if (user == null || user.getEmailVerifiedAt() != null) {
+			return;
+		}
+		String token = UUID.randomUUID().toString();
+		user.setEmailVerificationToken(token);
+		user.setEmailVerificationTokenExpiresAt(
+				Instant.now().plusSeconds(userVerificationProperties.getVerificationTokenTtlSeconds()));
+		User saved = userRepository.save(user);
+		sendVerificationEmail(saved);
+		auditService.record(saved.getId(), AuditAction.RESEND_VERIFICATION_EMAIL);
+	}
+
 	public void verifyUserByToken(String verificationToken) {
 		User user = userRepository.findByEmailVerificationToken(verificationToken)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "invalid or expired verification link"));
@@ -226,5 +264,27 @@ public class AuthService {
 
 	private static String normalizeEmail(String email) {
 		return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+	}
+
+	private static void validateNotificationTimes(List<String> times) {
+		if (times == null) return;
+		if (times.size() > 5) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "notificationTimes: max 5 times allowed");
+		}
+		for (String t : times) {
+			if (t == null || !t.matches("^([01]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "notificationTimes: invalid format, use HH:mm");
+			}
+		}
+	}
+
+	private static String serializeNotificationTimes(List<String> times) {
+		if (times == null || times.isEmpty()) return null;
+		try {
+			return new ObjectMapper().writeValueAsString(times);
+		} catch (JsonProcessingException e) {
+			log.warn("Failed to serialize notification times", e);
+			return null;
+		}
 	}
 }

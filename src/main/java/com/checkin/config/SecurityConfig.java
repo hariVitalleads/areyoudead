@@ -50,12 +50,14 @@ public class SecurityConfig {
 								"/api/user/refresh",
 								"/api/user/forgot-password",
 								"/api/user/reset-password",
+								"/api/user/resend-verification-email",
 								"/api/login/login",
 								"/checkin/api/user/register",
 								"/checkin/api/user/login",
 								"/checkin/api/user/refresh",
 								"/checkin/api/user/forgot-password",
 								"/checkin/api/user/reset-password",
+								"/checkin/api/user/resend-verification-email",
 								"/checkin/api/login/login")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET,

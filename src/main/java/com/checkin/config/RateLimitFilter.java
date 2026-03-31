@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Rate limits auth-related endpoints (login, register, forgot-password, refresh)
+ * Rate limits auth-related endpoints (login, register, forgot-password, resend-verification, refresh)
  * per client IP. Returns 429 Too Many Requests when limit exceeded.
  */
 @Component
@@ -52,13 +52,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
 	}
 
 	private boolean isAuthPath(String path) {
-		return path != null && (
-				path.startsWith("/api/login/login") ||
-				path.startsWith("/api/user/register") ||
-				path.startsWith("/api/user/login") ||
-				path.startsWith("/api/user/refresh") ||
-				path.startsWith("/api/user/forgot-password") ||
-				path.startsWith("/api/user/reset-password"));
+		if (path == null) {
+			return false;
+		}
+		return path.startsWith("/api/login/login")
+				|| path.startsWith("/checkin/api/login/login")
+				|| path.startsWith("/api/user/register")
+				|| path.startsWith("/checkin/api/user/register")
+				|| path.startsWith("/api/user/login")
+				|| path.startsWith("/checkin/api/user/login")
+				|| path.startsWith("/api/user/refresh")
+				|| path.startsWith("/checkin/api/user/refresh")
+				|| path.startsWith("/api/user/forgot-password")
+				|| path.startsWith("/checkin/api/user/forgot-password")
+				|| path.startsWith("/api/user/reset-password")
+				|| path.startsWith("/checkin/api/user/reset-password")
+				|| path.startsWith("/api/user/resend-verification-email")
+				|| path.startsWith("/checkin/api/user/resend-verification-email");
 	}
 
 	private String clientKey(HttpServletRequest request) {

@@ -7,6 +7,7 @@ import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.LoginRequest;
 import com.checkin.dto.RefreshTokenRequest;
 import com.checkin.dto.RegisterRequest;
+import com.checkin.dto.ResendVerificationEmailRequest;
 import com.checkin.dto.ResetPasswordRequest;
 import com.checkin.dto.UpdateAppUserRequest;
 import com.checkin.dto.UserResponse;
@@ -41,6 +42,7 @@ import org.springframework.context.annotation.Import;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -145,6 +147,23 @@ class AppUserControllerTest {
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").value(userId.toString()))
                                 .andExpect(jsonPath("$.email").value("test@example.com"));
+        }
+
+        @Test
+        @WithAnonymousUser
+        void resendVerificationEmail_Success() throws Exception {
+                ResendVerificationEmailRequest request = new ResendVerificationEmailRequest();
+                request.setEmail("test@example.com");
+
+                mockMvc.perform(post("/api/user/resend-verification-email")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                                .with(csrf()))
+                                .andExpect(status().isAccepted())
+                                .andExpect(jsonPath("$.message").value(
+                                                "If an account exists and needs email verification, a verification message has been sent."));
+
+                verify(authService).resendVerificationEmail("test@example.com");
         }
 
         @Test

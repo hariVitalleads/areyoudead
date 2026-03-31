@@ -64,6 +64,12 @@ public class User {
 	@Column(name = "super_user", nullable = false)
 	private boolean superUser = false;
 
+	@Column(name = "fcm_token")
+	private String fcmToken;
+
+	@Column(name = "notification_times_json")
+	private String notificationTimesJson;
+
 	protected User() {}
 
 	public User(UUID id, String email, String passwordHash, Instant createdAt) {
@@ -202,6 +208,22 @@ public class User {
 
 	public void setSuperUser(boolean superUser) {
 		this.superUser = superUser;
+	}
+
+	public String getFcmToken() {
+		return fcmToken;
+	}
+
+	public void setFcmToken(String fcmToken) {
+		this.fcmToken = fcmToken;
+	}
+
+	public String getNotificationTimesJson() {
+		return notificationTimesJson;
+	}
+
+	public void setNotificationTimesJson(String notificationTimesJson) {
+		this.notificationTimesJson = notificationTimesJson;
 	}
 }
 

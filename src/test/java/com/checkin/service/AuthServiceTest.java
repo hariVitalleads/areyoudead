@@ -27,6 +27,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.mail.internet.MimeMessage;
+
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +36,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -313,5 +317,55 @@ class AuthServiceTest {
 
         // Then
         verify(userRepository).findByEmail("test@example.com");
+    }
+
+    @Test
+    void resendVerificationEmail_WhenVerificationDisabled_NoLookup() {
+        when(userVerificationProperties.isRequireEmailVerification()).thenReturn(false);
+        authService.resendVerificationEmail(email);
+        verify(userRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void resendVerificationEmail_WhenUnknownEmail_NoSave() {
+        when(userVerificationProperties.isRequireEmailVerification()).thenReturn(true);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+        authService.resendVerificationEmail(email);
+        verify(userRepository, never()).save(any());
+        verify(auditService, never()).record(any(), any());
+    }
+
+    @Test
+    void resendVerificationEmail_WhenAlreadyVerified_NoSave() {
+        when(userVerificationProperties.isRequireEmailVerification()).thenReturn(true);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        authService.resendVerificationEmail(email);
+        verify(userRepository, never()).save(any());
+        verify(auditService, never()).record(any(), any());
+    }
+
+    @Test
+    void resendVerificationEmail_UnverifiedUser_NewTokenMailAndAudit() throws Exception {
+        User unverified = new User(userId, email, "hash", Instant.now());
+        unverified.setEmailVerificationToken("old-token");
+        when(userVerificationProperties.isRequireEmailVerification()).thenReturn(true);
+        when(userVerificationProperties.getVerificationTokenTtlSeconds()).thenReturn(86400);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(unverified));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+        when(emailProperties.isEnabled()).thenReturn(true);
+        when(emailProperties.getAppBaseUrl()).thenReturn("http://localhost:8080/checkin");
+        when(emailProperties.getFromAddress()).thenReturn("noreply@test.com");
+        when(emailProperties.getSubjectPrefix()).thenReturn("[T] ");
+        when(userVerificationTemplate.render(anyString(), anyString())).thenReturn("<html/>");
+        MimeMessage mime = mock(MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mime);
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+
+        authService.resendVerificationEmail(email);
+
+        verify(userRepository).save(argThat(u ->
+                u.getEmailVerificationToken() != null && !"old-token".equals(u.getEmailVerificationToken())));
+        verify(mailSender).send(mime);
+        verify(auditService).record(eq(userId), eq(AuditAction.RESEND_VERIFICATION_EMAIL));
     }
 }

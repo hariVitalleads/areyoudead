@@ -10,6 +10,7 @@ import com.checkin.dto.LoginRequest;
 import com.checkin.dto.MessageResponse;
 import com.checkin.dto.RefreshTokenRequest;
 import com.checkin.dto.RegisterRequest;
+import com.checkin.dto.ResendVerificationEmailRequest;
 import com.checkin.dto.ResetPasswordRequest;
 import com.checkin.dto.UpdateAppUserRequest;
 import com.checkin.dto.UserResponse;
@@ -73,6 +74,18 @@ public class AppUserController {
 	public MessageResponse verifyEmail(@PathVariable String token) {
 		authService.verifyUserByToken(token);
 		return new MessageResponse("Your email has been verified. You can now log in.");
+	}
+
+	/**
+	 * Public endpoint: request another registration verification email (unverified accounts only).
+	 * Response is always the same whether or not an email was sent, to avoid account enumeration.
+	 */
+	@PostMapping("/resend-verification-email")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public MessageResponse resendVerificationEmail(@Valid @RequestBody ResendVerificationEmailRequest req) {
+		authService.resendVerificationEmail(req.getEmail());
+		return new MessageResponse(
+				"If an account exists and needs email verification, a verification message has been sent.");
 	}
 
 	@PostMapping("/forgot-password")
