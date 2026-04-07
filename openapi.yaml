@@ -71,6 +71,14 @@ components:
           format: email
         password:
           type: string
+    FirebaseAuthRequest:
+      type: object
+      required:
+        - idToken
+      properties:
+        idToken:
+          type: string
+          description: Firebase ID token from the web SDK after sign-in (Google, Facebook, or email/password).
     UserResponse:
       type: object
       properties:
@@ -448,6 +456,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
+  /api/user/auth/firebase:
+    post:
+      tags:
+        - User
+      summary: Register or login with Firebase Authentication (ID token from web SDK)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FirebaseAuthRequest"
+      responses:
+        "200":
+          description: Session issued (same AuthResponse as password login)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already registered with a different method
+        "503":
+          description: Firebase Admin SDK not configured on server
   /api/user/refresh:
     post:
       tags:

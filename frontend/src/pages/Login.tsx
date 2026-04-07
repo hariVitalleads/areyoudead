@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import FirebaseAuthPanel from '../components/FirebaseAuthPanel';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -31,6 +32,16 @@ export default function Login() {
       <div className="auth-card">
         <h1>Checkin</h1>
         <p className="subtitle">Sign in to your account</p>
+        <FirebaseAuthPanel
+          mode="login"
+          onSuccess={(res) => {
+            doLogin(res);
+            navigate('/');
+          }}
+        />
+        <div className="auth-divider">
+          <span>or email and password on this site</span>
+        </div>
         <form onSubmit={handleSubmit}>
           {error && <div className="error">{error}</div>}
           <input

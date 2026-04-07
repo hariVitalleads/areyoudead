@@ -229,6 +229,81 @@ a:hover {
   font-size: 0.9rem;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.firebase-auth {
+  margin-bottom: 0.5rem;
+}
+
+.firebase-auth-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.firebase-auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-firebase {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-firebase:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-google:hover:not(:disabled) {
+  border-color: #4285f4;
+}
+
+.btn-facebook:hover:not(:disabled) {
+  border-color: #1877f2;
+}
+
+.firebase-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.firebase-email-form button[type='submit'] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.firebase-email-form button[type='submit']:hover:not(:disabled) {
+  background: var(--border);
+}
+
 .auth-card .token-box {
   margin-top: 1rem;
   padding: 1rem;

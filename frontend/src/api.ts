@@ -66,6 +66,15 @@ export async function login(body: LoginRequest): Promise<AuthResponse> {
   }).then(handleResponse<AuthResponse>);
 }
 
+/** Exchange a Firebase ID token for app JWTs (after Google, Facebook, or Firebase email/password). */
+export async function authenticateWithFirebase(idToken: string): Promise<AuthResponse> {
+  return fetch(`${API_BASE}/user/auth/firebase`, {
+    method: 'POST',
+    headers: headers(false),
+    body: JSON.stringify({ idToken }),
+  }).then(handleResponse<AuthResponse>);
+}
+
 export async function forgotPassword(
   email: string
 ): Promise<ForgotPasswordResponse> {

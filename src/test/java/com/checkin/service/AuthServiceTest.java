@@ -2,9 +2,13 @@ package com.checkin.service;
 
 import com.checkin.audit.AuditAction;
 import com.checkin.dto.AuthResponse;
+import com.checkin.dto.FirebaseAuthRequest;
 import com.checkin.dto.LoginRequest;
 import com.checkin.dto.RegisterRequest;
 import com.checkin.dto.UserResponse;
+import com.checkin.firebase.FirebaseIdentity;
+import com.checkin.firebase.FirebaseIdTokenVerifier;
+import com.checkin.model.AuthProvider;
 import com.checkin.config.AppMetrics;
 import com.checkin.config.EmailProperties;
 import com.checkin.config.UserVerificationProperties;
@@ -71,6 +75,9 @@ class AuthServiceTest {
 
     @Mock
     private UserVerificationTemplate userVerificationTemplate;
+
+    @Mock
+    private FirebaseIdTokenVerifier firebaseIdTokenVerifier;
 
     @InjectMocks
     private AuthService authService;
@@ -313,5 +320,45 @@ class AuthServiceTest {
 
         // Then
         verify(userRepository).findByEmail("test@example.com");
+    }
+
+    @Test
+    void login_FirebaseOnlyUser_ThrowsForbidden() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail(email);
+        request.setPassword(password);
+        user.setPasswordHash(null);
+        user.setAuthProvider(AuthProvider.FIREBASE);
+
+        when(userRepository.findByEmail(email.toLowerCase())).thenReturn(Optional.of(user));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> authService.login(request));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    void firebaseRegisterOrLogin_NewUser_IssuesSession() throws Exception {
+        FirebaseAuthRequest req = new FirebaseAuthRequest();
+        req.setIdToken("firebase-jwt");
+
+        FirebaseIdentity identity = new FirebaseIdentity("fb-uid-1", email, true, "Pat Smith");
+
+        when(firebaseIdTokenVerifier.isConfigured()).thenReturn(true);
+        when(firebaseIdTokenVerifier.verify("firebase-jwt")).thenReturn(identity);
+        when(userRepository.findByFirebaseUid("fb-uid-1")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(email.toLowerCase())).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+        when(registrationRepository.save(any(Registration.class))).thenAnswer(i -> i.getArgument(0));
+        when(jwtService.createAccessToken(any(User.class))).thenReturn("jwt");
+        when(jwtService.createRefreshTokenValue()).thenReturn("refresh");
+        when(jwtService.getRefreshTokenTtlSeconds()).thenReturn(604800L);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
+
+        AuthResponse response = authService.firebaseRegisterOrLogin(req);
+
+        assertEquals("jwt", response.getAccessToken());
+        verify(metrics).recordRegistration();
     }
 }

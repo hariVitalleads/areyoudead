@@ -18,8 +18,16 @@ public class User {
 	@Column(nullable = false)
 	private String email;
 
-	@Column(name = "password_hash", nullable = false)
+	/** Null for Firebase-only accounts until they set a password (e.g. via reset flow). */
+	@Column(name = "password_hash")
 	private String passwordHash;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "auth_provider", nullable = false, length = 20)
+	private AuthProvider authProvider = AuthProvider.LOCAL;
+
+	@Column(name = "firebase_uid")
+	private String firebaseUid;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -94,6 +102,22 @@ public class User {
 
 	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
+	}
+
+	public AuthProvider getAuthProvider() {
+		return authProvider;
+	}
+
+	public void setAuthProvider(AuthProvider authProvider) {
+		this.authProvider = authProvider;
+	}
+
+	public String getFirebaseUid() {
+		return firebaseUid;
+	}
+
+	public void setFirebaseUid(String firebaseUid) {
+		this.firebaseUid = firebaseUid;
 	}
 
 	public Instant getCreatedAt() {

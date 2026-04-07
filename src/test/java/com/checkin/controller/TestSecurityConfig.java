@@ -31,6 +31,7 @@ public class TestSecurityConfig {
                         .requestMatchers(
                                 "/api/user/register", "/api/user/login", "/api/user/refresh",
                                 "/api/user/forgot-password", "/api/user/reset-password",
+                                "/api/user/auth/firebase",
                                 "/api/login/login")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("SUPER_USER")

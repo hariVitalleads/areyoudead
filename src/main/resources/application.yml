@@ -19,6 +19,10 @@ app:
   user:
     require-email-verification: ${USER_REQUIRE_EMAIL_VERIFICATION:true}
     verification-token-ttl-seconds: ${USER_VERIFICATION_TTL:86400}
+  firebase:
+    # Service account JSON: base64-encoded, or use credentials-path to a file (server-only).
+    credentials-json-base64: ${FIREBASE_CREDENTIALS_JSON_BASE64:}
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
   emergency-contacts:
     max-count: ${EMERGENCY_CONTACTS_MAX_COUNT:3}
     require-verification: ${EMERGENCY_CONTACTS_REQUIRE_VERIFICATION:true}

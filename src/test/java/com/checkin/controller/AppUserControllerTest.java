@@ -3,6 +3,7 @@ package com.checkin.controller;
 import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.AuditEventResponse;
 import com.checkin.dto.AuthResponse;
+import com.checkin.dto.FirebaseAuthRequest;
 import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.LoginRequest;
 import com.checkin.dto.RefreshTokenRequest;
@@ -91,6 +92,22 @@ class AppUserControllerTest {
         @AfterEach
         void tearDown() {
                 SecurityContextHolder.clearContext();
+        }
+
+        @Test
+        @WithAnonymousUser
+        void firebaseAuth_Success() throws Exception {
+                FirebaseAuthRequest request = new FirebaseAuthRequest();
+                request.setIdToken("firebase-id-token");
+
+                when(authService.firebaseRegisterOrLogin(any(FirebaseAuthRequest.class))).thenReturn(authResponse);
+
+                mockMvc.perform(post("/api/user/auth/firebase")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request))
+                                .with(csrf()))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.accessToken").value("jwt-token"));
         }
 
         @Test

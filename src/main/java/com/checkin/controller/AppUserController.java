@@ -4,6 +4,7 @@ import com.checkin.dto.AppUserDetailsResponse;
 import com.checkin.dto.AuditEventResponse;
 import com.checkin.dto.CheckInSummaryResponse;
 import com.checkin.dto.AuthResponse;
+import com.checkin.dto.FirebaseAuthRequest;
 import com.checkin.dto.ForgotPasswordRequest;
 import com.checkin.dto.ForgotPasswordResponse;
 import com.checkin.dto.LoginRequest;
@@ -58,6 +59,14 @@ public class AppUserController {
 	@PostMapping("/login")
 	public AuthResponse login(@Valid @RequestBody LoginRequest req) {
 		return authService.login(req);
+	}
+
+	/**
+	 * Firebase Authentication: verifies ID token from the web SDK, registers or logs in, returns JWTs.
+	 */
+	@PostMapping("/auth/firebase")
+	public AuthResponse firebaseAuth(@Valid @RequestBody FirebaseAuthRequest req) {
+		return authService.firebaseRegisterOrLogin(req);
 	}
 
 	@PostMapping("/refresh")
