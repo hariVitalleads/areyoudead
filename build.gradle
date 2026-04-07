@@ -1,8 +1,20 @@
+// Flyway 10+ loads database modules via static registration using the Gradle plugin classloader.
+// Project `implementation` is not enough for `./gradlew flywayMigrate` / `flywayInfo` — add the PostgreSQL module here too.
+// Version must match Spring Boot BOM `flyway.version` (3.4.x → 10.20.1).
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath 'org.flywaydb:flyway-database-postgresql:10.20.1'
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.4.5'
 	id 'io.spring.dependency-management' version '1.1.7'
-	id 'org.flywaydb.flyway' version '11.14.0'
+	id 'org.flywaydb.flyway' version '10.20.1'
 }
 
 group = 'com.checkin'
@@ -32,6 +44,7 @@ dependencies {
 	implementation 'io.pebbletemplates:pebble:3.2.4'
 	implementation 'com.bucket4j:bucket4j-core:8.7.0'
 
+	// Versions from Spring Boot BOM — keep flyway-core and flyway-database-postgresql on the same line (e.g. 10.20.1).
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
